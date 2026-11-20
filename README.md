@@ -14,12 +14,9 @@ Nacional de Colombia.
 ## Ejecución
 
 1. Si no cuenta con el jar de antlr `antlr-4.13.2-complete.jar` en la carpeta lib, descargarlo e incluirlo ahí.
-2. Ejecutar el siguiente comando para procesar las gramáticas de antlr en código de java (ubicarse en la carpeta grammar):
-   
-```bash
-java -jar ../lib/antlr-4.13.2-complete.jar -Dlanguage=Java -visitor -no-listener -o ../gen LuaLexer.g4 LuaParser.g4
-```
-
+2. Ejecutar el script `build.sh` para convertir los archivos de gramática en código de Java, y compilar dicho código
+3. Ejecutar el script `run_test.sh` para constatar que el análisis léxico y sintáctico se hace adecuadamente para los casos de prueba considerados.
+  
 ## Observaciones
 
 ### Gramática
