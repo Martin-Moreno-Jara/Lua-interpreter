@@ -1,0 +1,56 @@
+--- 3.1 Lexical Conventions ---
+Linea1
+	TabAB☃ContinuacionSinEspacios
+Texto
+Multilinea
+Ignora secuencias \n y usa literal
+345	12499674	3.1416	3.1415926535898
+
+--- 3.2 y 3.3.3 Variables y Asignacion Multiple ---
+Original:	1	2	3
+Permutado (a,b,c = c,a,b):	3	1	2
+Evaluacion estricta de indices:
+i:	2	t[1]:	20	t[2]:	nil
+
+--- 3.3.1 y 3.3.6 Bloques y Llamadas ---
+Variable de bloque explicito
+Llamada desambiguada con punto y coma inicial
+
+
+--- 3.3.4 Control Structures ---
+Estructura if: condicion false detectada como true via 'not'
+while loop:	3
+while loop:	2
+while loop:	1
+repeat/until loop:	0
+repeat/until loop:	1
+repeat/until loop:	2
+Prueba de goto y labels:
+  salto goto	1
+  salto goto	2
+  ejecucion continua despues del goto
+
+--- 3.3.5 For Statement ---
+For numerico (step 2):	1
+For numerico (step 2):	3
+For numerico (step 2):	5
+For numerico flotante (step -0.5):	10.5
+For numerico flotante (step -0.5):	10.0
+For numerico flotante (step -0.5):	9.5
+For numerico flotante (step -0.5):	9.0
+For generico:	1	10
+For generico:	2	20
+For generico:	3	30
+
+--- 3.3.7 y 3.3.8 Variable Declarations (<const> y <close>) ---
+Variable const local:	100
+  Dentro del bloque con variable <close> normal
+  -> Recurso cerrado por finalizacion de bloque
+  Estado de cierre normal:	true
+  Provocando error intencional para evaluar __close...
+  -> Recurso cerrado por interrupcion de error. Motivo:	test_cases/02.in:109: FalloCriticoSimulado
+Estado post-pcall:	false
+
+--- 3.3.2 y Extensiones: Chunks y global ---
+Chunk cargado dinamicamente (math.pi):	3.1415926535898
+Resultado de ejecucion de chunk global:	Prueba de variable global implicita

@@ -1,0 +1,19 @@
+1. Elemento posicional via IIFE y bitwise left shift:	40
+
+2. Clave dinamica calculada -> (2^3 + '10.5'//2) & 0xFF:	13
+3. Llamada a funcion anidada en clave dinamica (Fallo de tipo):	40
+4. Llamada a funcion anidada en clave dinamica (Acierto de tipo):	string es valido
+
+5. Expresion loca (Logica short-circuit + coercion + length + relacional):	40.0
+
+6. Array generado con llamados multires anidados:
+   Valores:	1	2	3	4
+
+7. Llamada __call a sub-tabla (Que a su vez invoca self:method con bitwise XOR/Right Shift):
+   Resultado:	111
+
+8. Llamada __add a sub-tabla (Concatena primer argumento vararg con numero):
+   Resultado:	Aberracion999
+
+9. Acceso a indice inexistente (Dispara __index con operador XOR unario en la clave):
+   Resultado indice 99:	Indice 99 ausente. Calculo bitwise fallback: 201

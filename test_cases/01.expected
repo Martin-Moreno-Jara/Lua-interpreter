@@ -1,0 +1,56 @@
+--- 2.1 Values and Types ---
+Tipo de nil:      	nil
+Tipo de boolean:  	boolean
+Tipo de number:   	number
+Tipo de string:   	string
+Tipo de function: 	function
+Tipo de thread:   	thread
+Tipo de userdata: 	userdata
+Tipo de table:    	table
+Equivalencia float/int en índice (a[2.0] == a[2]):	true
+Syntactic sugar (record.name == record['name']):  	true
+
+--- 2.2 Scopes, Variables, and Environments ---
+Variable global/exterior inicial:	10
+  Bloque 1 - local x = x:	10
+    Bloque 2 anidado - local x = x + 1:	12
+  Bloque 1 tras anidamiento:	11
+Variable global/exterior tras los bloques:	10
+Evaluando Closures:
+  Closure 1 (Llamada 1):	21
+  Closure 1 (Llamada 2):	22
+  Closure 2 (Llamada 1):	21
+
+--- 2.3 Error Handling ---
+Resultado de pcall (Debe ser false):	false
+Mensaje atrapado por pcall:	test_cases/01.in:49: Este es un error simulado para pcall
+Resultado de xpcall (Debe ser false):	false
+Mensaje atrapado por xpcall:	TRACEBACK GENERADO -> Objeto de error no-string
+
+--- 2.4 Metatables and Metamethods ---
+Aritmética (10 + 5):	15
+Floor Division (10 // 5):	2
+Bitwise AND (10 & 5):	0
+Bitwise Shift Left (10 << 5):	320
+Concatenación (10 .. 5):	105
+Igualdad (10 == 10):	true
+Menor que (5 < 10):	true
+Asignación con __newindex y rawset (50 * 2):	100
+Búsqueda de clave inexistente (__index):	Fallback_Index: inexistente
+Llamada directa al objeto (__call):	Objeto Invocado: test
+
+--- 2.5 Garbage Collection ---
+¿La tabla débil tiene elementos antes del GC?	true
+¿La tabla débil tiene elementos después del GC?	false
+  -> Metamétodo __close invocado al salir del bloque
+¿Se ejecutó <close> automáticamente al cerrar el 'do...end'?	true
+
+--- 2.6 Coroutines ---
+co-body	1	10
+foo	2
+main	true	4
+co-body	r
+main	true	11	-9
+co-body	x	y
+main	true	10	end
+main	false	cannot resume dead coroutine

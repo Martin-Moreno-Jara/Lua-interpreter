@@ -1,0 +1,67 @@
+--- 3.4.1 Arithmetic Operators ---
+Suma (Int + Int = Int):	15
+Suma (Int + Float = Float):	13.14
+Division Float (/):	3.3333333333333
+Division Entera (//):	3
+Division Entera Negativa (hacia -infinito):	-4
+Modulo (%):	1
+Modulo Negativo:	2
+Exponenciacion (^, siempre float):	8.0
+Menos Unario:	-10
+
+--- 3.4.2 Bitwise Operators ---
+Bitwise AND (&):	2
+Bitwise OR (|):	11
+Bitwise XOR (~):	9
+Bitwise NOT (~ unario):	-11
+Shift Right (>>):	5
+Shift Left (<<):	40
+Shift Negativo (equivale a direccion opuesta):	5
+Shift Mayor a bits (debe ser 0):	0
+
+--- 3.4.3 Coercions and Conversions ---
+Coercion aritmetica (String a Numero):	15
+Coercion aritmetica Float a Numero:	21.0
+Bitwise de Float representable como Int:	0
+Fallo esperado en Bitwise String a Int:	true
+
+--- 3.4.4 Relational Operators ---
+Igualdad (Mismo tipo y valor):	true
+Igualdad (Fallo por tipo distinto):	false
+Desigualdad (~=):	true
+Comparacion de Strings (Lexicografica):	true
+Igualdad de Tablas (Referencia, debe ser false):	false
+Igualdad de Tablas (Misma Referencia, true):	true
+NaN es menor que NaN (false):	false
+NaN es igual a NaN (false):	false
+NaN es mayor o igual a NaN (false):	false
+
+--- 3.4.5 Logical Operators ---
+Operador AND (true and true):	resultado
+Operador AND (false and true):	false
+Operador AND (nil and true):	nil
+Operador OR (true or false):	10
+Operador OR (false or true):	fallback
+Cero es true en Lua:	cero es true
+String vacio es true:	vacio es true
+Short-circuit OR:	true
+Efecto secundario evitado por short-circuit:	true
+
+--- 3.4.6 Concatenation ---
+Concatenacion String-String:	Hola Mundo
+Concatenacion Number-Number:	1020
+Concatenacion String-Number:	Valor: 99
+
+--- 3.4.7 The Length Operator ---
+Longitud de String (#):	10
+Longitud de Secuencia Pura:	5
+Longitud con Agujero (Border puede ser 3 o 5):	5
+Longitud con Agujero Inicial (Border puede ser 0 o 3):	3
+Longitud de Tabla Vacia:	0
+
+--- 3.4.8 Precedence ---
+Precedencia Aritmetica (10 + 2 * 5):	20
+Precedencia Exponenciacion y Unario (-2^2 es -(2^2)):	-4.0
+Asociatividad Derecha de Exponenciacion (2^3^2):	512.0
+Asociatividad Derecha Concatenacion:	abc
+Precedencia Logica vs Relacional:	true

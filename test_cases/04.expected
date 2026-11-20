@@ -1,0 +1,40 @@
+--- 3.4.9 Table Constructors ---
+Constructor Posicion 1:	Posicion 1
+Constructor Posicion 2:	Posicion 2
+Constructor Posicion 3:	Posicion 3
+Constructor Clave string (x):	100
+Constructor Clave expresion dinamica (20):	Clave Dinamica
+Constructor Clave indice explicito (30):	23
+Multires al final del constructor:	X	A	B	C
+Multires cortado en el medio:	A	X	nil
+
+--- 3.4.10 Function Calls ---
+Llamada estandar:	1	2	3
+Llamada sugar con Literal String:	Cadena Directa
+Llamada sugar con Tabla:	table
+Llamada a metodo con colon syntax (v:name):	600
+
+--- 3.4.11 Function Definitions y Variadics ---
+Global sugar translation:	asignacion de funcion
+Local recursiva instanciada correctamente:	6
+Variadic Arg a:	3
+Variadic Arg b:	nil
+Numero de extra args (v_args.n):	0
+Variadic Arg a:	3
+Variadic Arg b:	4
+Numero de extra args (v_args.n):	0
+Variadic Arg a:	3
+Variadic Arg b:	4
+Numero de extra args (v_args.n):	2
+Primer extra arg:	5
+Legacy Variadic (sin nombre) length:	2
+
+--- 3.4.12 Lists of Expressions, Multiple Results, and Adjustment ---
+Asignacion multiple exacta:	10	20	30
+Asignacion con extras truncados:	10	20
+Asignacion con faltantes llenados con nil:	10	20	30	nil
+Asignacion truncada + multiple final:	a	10	20
+Forzado a 1 resultado mediante parentesis:	10
+Print wrapper recibiendo multires:	f_multi retorna:	10	20	30
+Print wrapper recibiendo multires:	g_multi envuelto en parentesis retorna:	a
+Retorno multires desde otra funcion (Tail call propagation):	10	20	30
