@@ -13,7 +13,7 @@ Nacional de Colombia.
 
 ## Ejecución
 
-1. Si no cuenta con el jar de antlr `antlr-4.13.2-complete.jar` en la carpeta lib, descargarlo e incluirlo ahí.
+1. Si no cuenta con el jar de antlr `antlr-4.13.2-complete.jar` en la carpeta lib, descargarlo e incluirlo ahí. [Link de descarga](https://www.antlr.org/download/antlr-4.13.2-complete.jar).
 2. Ejecutar el script `build.sh` para convertir los archivos de gramática en código de Java, y compilar dicho código
 3. Ejecutar el script `run_test.sh` para constatar que el análisis léxico y sintáctico se hace adecuadamente para los casos de prueba considerados.
   
