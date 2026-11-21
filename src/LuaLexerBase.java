@@ -15,7 +15,7 @@ public abstract class LuaLexerBase extends Lexer {
     {
         start_line = this.getLine();
         start_col = this.getCharPositionInLine() - 2;
-        var cs = (CharStream)_input;
+        CharStream cs = (CharStream)_input;
         if (cs.LA(1) == '[')
         {
             int sep = skip_sep(cs);
@@ -37,8 +37,8 @@ public abstract class LuaLexerBase extends Lexer {
         this.getInterpreter().consume(cs);
         for (; ; )
         {
-            var c = cs.LA(1);
-            var cc = (char)c;
+            int c = cs.LA(1);
+            char cc = (char)c;
             switch (c)
             {
                 case -1:
