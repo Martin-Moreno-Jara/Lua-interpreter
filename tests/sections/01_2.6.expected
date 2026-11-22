@@ -1,0 +1,10 @@
+
+--- 2.6 Coroutines ---
+co-body	1	10
+foo	2
+main	true	4
+co-body	r
+main	true	11	-9
+co-body	x	y
+main	true	10	end
+main	false	cannot resume dead coroutine

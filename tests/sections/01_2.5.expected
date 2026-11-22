@@ -1,0 +1,6 @@
+
+--- 2.5 Garbage Collection ---
+¿La tabla débil tiene elementos antes del GC?	true
+¿La tabla débil tiene elementos después del GC?	false
+  -> Metamétodo __close invocado al salir del bloque
+¿Se ejecutó <close> automáticamente al cerrar el 'do...end'?	true

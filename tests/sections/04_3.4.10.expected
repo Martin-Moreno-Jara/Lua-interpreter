@@ -1,0 +1,6 @@
+
+--- 3.4.10 Function Calls ---
+Llamada estandar:	1	2	3
+Llamada sugar con Literal String:	Cadena Directa
+Llamada sugar con Tabla:	table
+Llamada a metodo con colon syntax (v:name):	600

@@ -1,0 +1,15 @@
+
+--- 3.4.11 Function Definitions y Variadics ---
+Global sugar translation:	asignacion de funcion
+Local recursiva instanciada correctamente:	6
+Variadic Arg a:	3
+Variadic Arg b:	nil
+Numero de extra args (v_args.n):	0
+Variadic Arg a:	3
+Variadic Arg b:	4
+Numero de extra args (v_args.n):	0
+Variadic Arg a:	3
+Variadic Arg b:	4
+Numero de extra args (v_args.n):	2
+Primer extra arg:	5
+Legacy Variadic (sin nombre) length:	2

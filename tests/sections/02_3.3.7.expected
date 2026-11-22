@@ -1,0 +1,9 @@
+
+--- 3.3.7 y 3.3.8 Variable Declarations (<const> y <close>) ---
+Variable const local:	100
+  Dentro del bloque con variable <close> normal
+  -> Recurso cerrado por finalizacion de bloque
+  Estado de cierre normal:	true
+  Provocando error intencional para evaluar __close...
+  -> Recurso cerrado por interrupcion de error. Motivo:	tests/sections/02_3.3.7.lua:109: FalloCriticoSimulado
+Estado post-pcall:	false

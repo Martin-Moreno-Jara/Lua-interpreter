@@ -1,0 +1,12 @@
+
+--- 2.4 Metatables and Metamethods ---
+Aritmética (10 + 5):	15
+Floor Division (10 // 5):	2
+Bitwise AND (10 & 5):	0
+Bitwise Shift Left (10 << 5):	320
+Concatenación (10 .. 5):	105
+Igualdad (10 == 10):	true
+Menor que (5 < 10):	true
+Asignación con __newindex y rawset (50 * 2):	100
+Búsqueda de clave inexistente (__index):	Fallback_Index: inexistente
+Llamada directa al objeto (__call):	Objeto Invocado: test

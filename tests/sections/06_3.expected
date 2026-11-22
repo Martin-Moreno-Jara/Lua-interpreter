@@ -1,0 +1,4 @@
+
+3. CLAVES Y CAOS DE OPERADORES:
+Acceso via booleano generado dinamicamente:	Realidad Distorsionada (Clave Booleana)
+Ecuacion [ (~( -(' -10 ' + 0) // 3 ) << 2 ) | 0x0F ]:	-1

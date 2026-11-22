@@ -1,0 +1,4 @@
+
+--- 3.3.2 y Extensiones: Chunks y global ---
+Chunk cargado dinamicamente (math.pi):	3.1415926535898
+Resultado de ejecucion de chunk global:	Prueba de variable global implicita

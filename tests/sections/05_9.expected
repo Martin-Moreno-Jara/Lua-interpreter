@@ -1,0 +1,3 @@
+
+9. Acceso a indice inexistente (Dispara __index con operador XOR unario en la clave):
+   Resultado indice 99:	Indice 99 ausente. Calculo bitwise fallback: 201

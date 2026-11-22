@@ -1,0 +1,2 @@
+
+2. Clave dinamica calculada -> (2^3 + '10.5'//2) & 0xFF:	13

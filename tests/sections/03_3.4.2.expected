@@ -1,0 +1,10 @@
+
+--- 3.4.2 Bitwise Operators ---
+Bitwise AND (&):	2
+Bitwise OR (|):	11
+Bitwise XOR (~):	9
+Bitwise NOT (~ unario):	-11
+Shift Right (>>):	5
+Shift Left (<<):	40
+Shift Negativo (equivale a direccion opuesta):	5
+Shift Mayor a bits (debe ser 0):	0

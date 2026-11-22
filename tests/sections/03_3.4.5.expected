@@ -1,0 +1,11 @@
+
+--- 3.4.5 Logical Operators ---
+Operador AND (true and true):	resultado
+Operador AND (false and true):	false
+Operador AND (nil and true):	nil
+Operador OR (true or false):	10
+Operador OR (false or true):	fallback
+Cero es true en Lua:	cero es true
+String vacio es true:	vacio es true
+Short-circuit OR:	true
+Efecto secundario evitado por short-circuit:	true

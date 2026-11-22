@@ -1,0 +1,13 @@
+
+--- 3.3.4 Control Structures ---
+Estructura if: condicion false detectada como true via 'not'
+while loop:	3
+while loop:	2
+while loop:	1
+repeat/until loop:	0
+repeat/until loop:	1
+repeat/until loop:	2
+Prueba de goto y labels:
+  salto goto	1
+  salto goto	2
+  ejecucion continua despues del goto

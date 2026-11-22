@@ -1,0 +1,12 @@
+
+--- 3.3.5 For Statement ---
+For numerico (step 2):	1
+For numerico (step 2):	3
+For numerico (step 2):	5
+For numerico flotante (step -0.5):	10.5
+For numerico flotante (step -0.5):	10.0
+For numerico flotante (step -0.5):	9.5
+For numerico flotante (step -0.5):	9.0
+For generico:	1	10
+For generico:	2	20
+For generico:	3	30
