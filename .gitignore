@@ -26,3 +26,6 @@ replay_pid*
 gen/
 out/
 grammar/.antlr/
+CLAUDE.md
+dist/
+.idea/

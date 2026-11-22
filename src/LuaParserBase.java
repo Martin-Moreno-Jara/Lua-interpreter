@@ -13,7 +13,7 @@ public abstract class LuaParserBase extends Parser
     protected boolean IsFunctionCall()
     {
         BufferedTokenStream stream = (BufferedTokenStream)_input;
-        var la = stream.LT(1);
+        Token la = stream.LT(1);
 	if (la.getType() != LuaLexer.NAME) return false;
 	la = stream.LT(2);
 	if (la.getType() == LuaLexer.OP) return false;
