@@ -28,4 +28,4 @@ out/
 grammar/.antlr/
 CLAUDE.md
 dist/
-.idea/
+/out-idea/
