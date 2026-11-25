@@ -361,14 +361,14 @@ Moreno y Juan David Ardila Díaz.
 
 ### Persona B: Valores, tablas y operadores. Asignado a: Camilo
 
-- [ ] Clases de `LuaValue`, con `equals` y `hashCode` según §5.1.
-- [ ] `Literals`: escapes `\n \t \0 \xXX \ddd \u{XXX}` (a UTF-8) y `\z`; strings
+- [x] Clases de `LuaValue`, con `equals` y `hashCode` según §5.1.
+- [x] `Literals`: escapes `\n \t \0 \xXX \ddd \u{XXX}` (a UTF-8) y `\z`; strings
       largos `[==[ ]==]` (sin el primer salto de línea y sin procesar escapes);
       números decimales, hexadecimales, con exponente y hex float.
-- [X] `NumberFormat`: el `%.14g` de Lua.
-- [ ] `Ops`: aritmética, operaciones de bits, coerciones, comparaciones (NaN,
+- [x] `NumberFormat`: el `%.14g` de Lua.
+- [x] `Ops`: aritmética, operaciones de bits, coerciones, comparaciones (NaN,
       `10 == 10.0`, orden lexicográfico de strings), concatenación y longitud.
-- [ ] Todos los metamétodos:
+- [x] Todos los metamétodos:
       `__add __sub __mul __div __mod __pow __unm     __idiv __band __bor __bxor __bnot __shl __shr __concat __len __eq __lt     __le __index __newindex __call`,
       con `__index` y `__newindex` como función o como tabla, y cadenas de
       `__index`.
