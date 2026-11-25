@@ -34,18 +34,33 @@ public class Evaluator extends LuaParserBaseVisitor<Object> {
         Scope saved = scope;
         scope = new Scope(saved);
         try {
-            for (LuaParser.StatContext st : ctx.stat()) {
-                Interpreter.LINE.set(st.getStart().getLine());   // para mensajes de error
-                visit(st);
-            }
-            if (ctx.retstat() != null) {
-                Interpreter.LINE.set(ctx.retstat().getStart().getLine());
-                visit(ctx.retstat());
-            }
+            for (LuaParser.StatContext st : ctx.stat()) exec(st);
+            if (ctx.retstat() != null) exec(ctx.retstat());
         } finally {
             scope = saved;
         }
         return null;
+    }
+
+    // Ejecuta una sentencia: fija la línea y, si sale un error de runtime sin
+    // posición (los de Ops), le antepone "chunk:línea: " una sola vez (§5.3).
+    private void exec(ParserRuleContext st) {
+        Interpreter.LINE.set(st.getStart().getLine());
+        try {
+            visit(st);
+        } catch (LuaError e) {
+            throw positioned(e);
+        }
+    }
+
+    // Solo los mensajes string llevan posición; error(tabla) no. Si el error
+    // viene de una función llamada, su propio bloque ya lo posicionó.
+    private LuaError positioned(LuaError e) {
+        if (e.positioned || !(e.value instanceof LuaString)) return e;
+        String msg = ((LuaString) e.value).value;
+        LuaError p = new LuaError(LuaValue.of(chunkName + ":" + Interpreter.currentLine() + ": " + msg));
+        p.positioned = true;
+        return p;
     }
 
     // retstat: 'return' explist? ';'?
@@ -169,6 +184,98 @@ public class Evaluator extends LuaParserBaseVisitor<Object> {
         LuaValue a = evalOne(ctx.exp(0));
         if (a.isTruthy()) return a;
         return evalOne(ctx.exp(1));
+    }
+
+    // ------------------------------------------------------------------
+    // Indexación: a.b y a[b]
+    // ------------------------------------------------------------------
+    // Hacen falta para llamar io.write(...) u obj:m(...). __index lo resuelve Ops.
+
+    @Override
+    public Object visitFieldExp(LuaParser.FieldExpContext ctx) {
+        LuaValue t = evalOne(ctx.prefixexp());
+        return Ops.index(t, LuaValue.of(ctx.NAME().getText()));
+    }
+
+    @Override
+    public Object visitIndexExp(LuaParser.IndexExpContext ctx) {
+        LuaValue t = evalOne(ctx.prefixexp());
+        LuaValue k = evalOne(ctx.exp());
+        return Ops.index(t, k);
+    }
+
+    // ------------------------------------------------------------------
+    // Llamadas
+    // ------------------------------------------------------------------
+    // Hay dos lugares en la gramática con la misma forma:
+    //   prefixexp:    CallExp / MethodCallExp   (llamada usada como expresión)
+    //   functioncall: PlainCall / MethodCall    (llamada usada como sentencia)
+    // Los cuatro terminan en call() o methodCall(). Todos devuelven LuaValue[],
+    // y evalOne/evalExpList deciden si se trunca o se expande.
+
+    @Override
+    public Object visitCallExp(LuaParser.CallExpContext ctx) {
+        return call(ctx, ctx.prefixexp(), ctx.args());
+    }
+
+    @Override
+    public Object visitMethodCallExp(LuaParser.MethodCallExpContext ctx) {
+        return methodCall(ctx, ctx.prefixexp(), ctx.NAME().getText(), ctx.args());
+    }
+
+    @Override
+    public Object visitPlainCall(LuaParser.PlainCallContext ctx) {
+        return call(ctx, ctx.prefixexp(), ctx.args());
+    }
+
+    @Override
+    public Object visitMethodCall(LuaParser.MethodCallContext ctx) {
+        return methodCall(ctx, ctx.prefixexp(), ctx.NAME().getText(), ctx.args());
+    }
+
+    // Sentencia que es solo una llamada: f(x). Los resultados se descartan.
+    @Override
+    public Object visitCallStat(LuaParser.CallStatContext ctx) {
+        visit(ctx.functioncall());
+        return null;
+    }
+
+    // f(args): se evalúa la función, luego los argumentos, y se llama.
+    private LuaValue[] call(ParserRuleContext ctx, LuaParser.PrefixexpContext fn, LuaParser.ArgsContext args) {
+        LuaValue f = evalOne(fn);
+        LuaValue[] a = evalArgs(args);
+        return invoke(ctx, f, a);
+    }
+
+    // obj:m(args) equivale a obj.m(obj, args), pero obj se evalúa UNA sola vez.
+    private LuaValue[] methodCall(ParserRuleContext ctx, LuaParser.PrefixexpContext objExp,
+                                  String name, LuaParser.ArgsContext args) {
+        LuaValue obj = evalOne(objExp);
+        LuaValue f = Ops.index(obj, LuaValue.of(name));
+        LuaValue[] rest = evalArgs(args);
+        LuaValue[] a = new LuaValue[rest.length + 1];
+        a[0] = obj;                                        // self (contrato §5.2)
+        System.arraycopy(rest, 0, a, 1, rest.length);
+        return invoke(ctx, f, a);
+    }
+
+    // Fija la línea de la llamada justo antes de llamar (los argumentos pudieron
+    // contener otras llamadas que la cambiaron) y la restaura al volver, porque
+    // el cuerpo de la función llamada la movió a sus propias líneas.
+    private LuaValue[] invoke(ParserRuleContext ctx, LuaValue f, LuaValue[] args) {
+        int line = ctx.getStart().getLine();
+        Interpreter.LINE.set(line);
+        LuaValue[] r = Ops.call(f, args);
+        Interpreter.LINE.set(line);
+        return r;
+    }
+
+    // args: '(' explist? ')' | tableconstructor | string
+    // f"s" y f{...} son llamadas con un único argumento.
+    private LuaValue[] evalArgs(LuaParser.ArgsContext ctx) {
+        if (ctx.tableconstructor() != null) return new LuaValue[] { evalOne(ctx.tableconstructor()) };
+        if (ctx.string() != null) return new LuaValue[] { LuaValue.of(Literals.parseString(ctx.string().getText())) };
+        return evalExpList(ctx.explist());                 // null si es (), y da NONE
     }
 
     // ------------------------------------------------------------------
