@@ -6,23 +6,22 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-/**
- * Pruebas unitarias de Literals. Los valores esperados se sacaron de lua5.4 real
- * (math.type, print y los bytes de cada string).
- */
+// Los valores esperados se obtuvieron de lua5.4 con math.type, print y los bytes de cada string.
+/** Pruebas de Literals: números y strings escritos en el código fuente. */
 public class LiteralsTest {
 
-    // ---- números ----
+    // ---- Números ----
 
+    /** Cada número escrito en el código da el tipo (entero o decimal) y el valor que muestra lua5.4. */
     @ParameterizedTest(name = "{0} -> {1} {2}")
     @CsvSource({
-        // enteros decimales y hexadecimales
+        // Enteros en base 10 y en base 16 (hexadecimal)
         "345, integer, 345",
         "0, integer, 0",
         "0xBEBADA, integer, 12499674",
         "0xff, integer, 255",
         "0XA, integer, 10",
-        // punto o exponente lo vuelven float
+        // El punto o el exponente lo vuelven decimal
         "314.16e-2, float, 3.1416",
         "3.14, float, 3.14",
         "10.0, float, 10.0",
@@ -30,7 +29,7 @@ public class LiteralsTest {
         ".5, float, 0.5",
         "1e2, float, 100.0",
         "2E-3, float, 0.002",
-        // hex float, con y sin exponente p
+        // Decimales en hexadecimal, con y sin exponente p
         "0X1.921FB54442D18P+1, float, 3.1415926535898",
         "0x1.8, float, 1.5",
         "0x.8, float, 0.5",
@@ -38,46 +37,50 @@ public class LiteralsTest {
         "0x1P-1, float, 0.5",
         "0xA.8p0, float, 10.5",
     })
-    void numeroIgualQueLua(String token, String tipo, String impreso) {
+    void numberLikeLua(String token, String type, String printed) {
         LuaValue v = Literals.parseNumber(token);
-        if (tipo.equals("integer")) {
+        if (type.equals("integer")) {
             assertInstanceOf(LuaInteger.class, v);
-            assertEquals(impreso, Long.toString(((LuaInteger) v).value));
+            assertEquals(printed, Long.toString(((LuaInteger) v).value));
         } else {
             assertInstanceOf(LuaFloat.class, v);
-            assertEquals(impreso, NumberFormat.format(((LuaFloat) v).value));
+            assertEquals(printed, NumberFormat.format(((LuaFloat) v).value));
         }
     }
 
+    // En lua5.4, 0X1.921FB54442D18P+1 == math.pi da true
+    /** Un decimal en hexadecimal se lee sin perder precisión. */
     @Test
-    void hexFloatEsExacto() {
-        // en lua5.4, 0X1.921FB54442D18P+1 == math.pi da true
+    void hexFloatIsExact() {
         assertEquals(LuaValue.of(Math.PI), Literals.parseNumber("0X1.921FB54442D18P+1"));
     }
 
-    // ---- strings con comillas ----
+    // ---- Strings entre comillas ----
 
-    // Arma un string de Java a partir de bytes, para comparar con la salida UTF-8.
+    /** Arma un string de Java a partir de bytes, para comparar con los bytes UTF-8 esperados. */
     private static String bytes(int... bs) {
         StringBuilder sb = new StringBuilder();
         for (int b : bs) sb.append((char) b);
         return sb.toString();
     }
 
-    // Token "barra-u{code}" entre comillas, sin escribir la barra seguida de u.
+    // Se arma por partes porque escribir la barra invertida seguida de u impediría compilar este archivo.
+    /** Token "barra-u{code}" entre comillas, con el código del carácter dado. */
     private static String utfToken(String code) {
         return "\"\\" + "u{" + code + "}\"";
     }
 
+    /** Un string sin barras invertidas se copia tal cual, con comillas dobles o simples. */
     @Test
-    void sinEscapes() {
+    void plainString() {
         assertEquals("hola", Literals.parseString("\"hola\""));
         assertEquals("hola", Literals.parseString("'hola'"));
         assertEquals("", Literals.parseString("\"\""));
     }
 
+    /** Las secuencias de una letra (\n, \t, \a...) dan el carácter que representan. */
     @Test
-    void escapesDeUnaLetra() {
+    void singleLetterEscapes() {
         assertEquals("a\nb\tc", Literals.parseString("\"a\\nb\\tc\""));
         assertEquals(bytes(0x07, 0x08, 0x0C, 0x0B, 0x0D), Literals.parseString("\"\\a\\b\\f\\v\\r\""));
         assertEquals("\\", Literals.parseString("\"\\\\\""));
@@ -85,33 +88,38 @@ public class LiteralsTest {
         assertEquals("it's", Literals.parseString("'it\\'s'"));
     }
 
+    /** \xXX da el byte con ese valor hexadecimal. */
     @Test
-    void escapeHex() {
+    void hexEscape() {
         assertEquals("A", Literals.parseString("\"\\x41\""));
         assertEquals(bytes(0xFF), Literals.parseString("\"\\xff\""));
     }
 
+    /** \ddd lee como máximo tres dígitos decimales; lo que sigue es texto normal. */
     @Test
-    void escapeDecimalLeeHastaTresDigitos() {
+    void decimalEscapeReadsUpToThreeDigits() {
         assertEquals("B", Literals.parseString("\"\\066\""));
         assertEquals("A9", Literals.parseString("\"\\0659\""));
         assertEquals("{4", Literals.parseString("\"\\1234\""));
         assertEquals(bytes(0xFF), Literals.parseString("\"\\255\""));
     }
 
+    // test_cases/01.in: #"Lua\0String" es 10
+    /** Un byte 0 en medio del string es un carácter más, no el final del texto. */
     @Test
-    void ceroDentroDelString() {
-        // test_cases/01.in: #"Lua\0String" es 10
+    void zeroByteInsideString() {
         String s = Literals.parseString("\"Lua\\0String\"");
         assertEquals(10, s.length());
         assertEquals(0, s.charAt(3));
     }
 
+    /** Un escape decimal mayor que 255 es un error, porque no cabe en un byte. */
     @Test
-    void escapeDecimalMayorA255EsError() {
+    void decimalEscapeAbove255IsError() {
         assertThrows(LuaError.class, () -> Literals.parseString("\"\\300\""));
     }
 
+    /** El escape de un código de carácter da sus bytes UTF-8, de 1 a 6 bytes. */
     @ParameterizedTest(name = "{0}")
     @CsvSource({
         "7F, 7F",
@@ -124,54 +132,61 @@ public class LiteralsTest {
         "10FFFF, F4 8F BF BF",
         "7FFFFFFF, FD BF BF BF BF BF",
     })
-    void escapeUtf8(String code, String esperado) {
-        String[] partes = esperado.split(" ");
-        int[] bs = new int[partes.length];
-        for (int k = 0; k < partes.length; k++) bs[k] = Integer.parseInt(partes[k], 16);
+    void utf8Escape(String code, String expected) {
+        String[] parts = expected.split(" ");
+        int[] bs = new int[parts.length];
+        for (int k = 0; k < parts.length; k++) bs[k] = Integer.parseInt(parts[k], 16);
         assertEquals(bytes(bs), Literals.parseString(utfToken(code)));
     }
 
+    /** \z se salta los espacios y saltos de línea que le siguen. */
     @Test
-    void escapeZSaltaEspaciosYSaltos() {
+    void zEscapeSkipsWhitespace() {
         assertEquals("ab", Literals.parseString("\"a\\z   \n\t  b\""));
     }
 
+    /** Una barra invertida antes de un salto de línea da un salto de línea, también con \r\n. */
     @Test
-    void barraYSaltoDeLinea() {
+    void backslashNewline() {
         assertEquals("a\nb", Literals.parseString("\"a\\\nb\""));
         assertEquals("a\nb", Literals.parseString("\"a\\\r\nb\""));
     }
 
+    /** El string con escapes mezclados de test_cases/02.in. */
     @Test
-    void stringDelCaso02() {
+    void stringFromCase02() {
         String token = "\"Linea1\\n\\tTab\\x41\\066\\" + "u{2603}\\z\n    ContinuacionSinEspacios\"";
-        String esperado = "Linea1\n\tTabAB" + bytes(0xE2, 0x98, 0x83) + "ContinuacionSinEspacios";
-        assertEquals(esperado, Literals.parseString(token));
+        String expected = "Linea1\n\tTabAB" + bytes(0xE2, 0x98, 0x83) + "ContinuacionSinEspacios";
+        assertEquals(expected, Literals.parseString(token));
     }
 
-    // ---- strings largos ----
+    // ---- Strings largos [[ ]] ----
 
+    /** Un string largo no interpreta las barras invertidas. */
     @Test
-    void largoNoProcesaEscapes() {
+    void longStringKeepsBackslashes() {
         assertEquals("a\\nb", Literals.parseString("[[a\\nb]]"));
     }
 
+    /** Un string largo descarta solo el primer salto de línea, el que va pegado a los corchetes. */
     @Test
-    void largoQuitaElPrimerSaltoDeLinea() {
+    void longStringDropsFirstNewline() {
         assertEquals("hola", Literals.parseString("[[\nhola]]"));
         assertEquals("hola", Literals.parseString("[[\r\nhola]]"));
-        // solo el primero
+        // Solo el primero
         assertEquals("\nx", Literals.parseString("[[\n\nx]]"));
     }
 
+    /** Con signos = entre los corchetes, ]] dentro del texto no cierra el string. */
     @Test
-    void largoConNivel() {
+    void longStringWithLevel() {
         assertEquals("a]]b", Literals.parseString("[=[a]]b]=]"));
         assertEquals("", Literals.parseString("[==[]==]"));
     }
 
+    /** El string largo de test_cases/02.in. */
     @Test
-    void largoDelCaso02() {
+    void longStringFromCase02() {
         String token = "[==[\nTexto\nMultilinea\nIgnora secuencias \\n y usa literal]==]";
         assertEquals("Texto\nMultilinea\nIgnora secuencias \\n y usa literal", Literals.parseString(token));
     }
