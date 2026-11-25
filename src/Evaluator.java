@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.List;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.*;
@@ -34,12 +35,18 @@ public class Evaluator extends LuaParserBaseVisitor<Object> {
         Scope saved = scope;
         scope = new Scope(saved);
         try {
-            for (LuaParser.StatContext st : ctx.stat()) exec(st);
-            if (ctx.retstat() != null) exec(ctx.retstat());
+            runStatements(ctx);
         } finally {
             scope = saved;
         }
         return null;
+    }
+
+    // Ejecuta las sentencias del bloque en el scope ACTUAL, sin abrir uno nuevo.
+    // Lo usan visitBlock y repeat/until (cuya condición ve los locales del cuerpo).
+    private void runStatements(LuaParser.BlockContext ctx) {
+        for (LuaParser.StatContext st : ctx.stat()) exec(st);
+        if (ctx.retstat() != null) exec(ctx.retstat());
     }
 
     // Ejecuta una sentencia: fija la línea y, si sale un error de runtime sin
@@ -148,6 +155,316 @@ public class Evaluator extends LuaParserBaseVisitor<Object> {
     }
 
     // ------------------------------------------------------------------
+    // Funciones
+    // ------------------------------------------------------------------
+    // Definir una función NO ejecuta su cuerpo: solo crea un LuaClosure con el
+    // cuerpo y el scope actual (de ahí salen sus upvalues).
+
+    // function (...) ... end usada como expresión: local f = function(x) ... end
+    @Override
+    public Object visitFunctionDefExp(LuaParser.FunctionDefExpContext ctx) {
+        return new LuaClosure(ctx.functiondef().funcbody(), scope, env, chunkName, false);
+    }
+
+    // local function f(...) ... end
+    // Se declara f ANTES de crear la closure, para que el cuerpo vea a f y la
+    // recursión funcione. (Con 'local f = function...' el cuerpo no vería a f.)
+    @Override
+    public Object visitLocalFunctionStat(LuaParser.LocalFunctionStatContext ctx) {
+        Scope.Cell c = scope.declare(ctx.NAME().getText(), LuaNil.NIL);
+        c.value = new LuaClosure(ctx.funcbody(), scope, env, chunkName, false);
+        return null;
+    }
+
+    // function a.b.c:m(...) ... end
+    //   'function f'      es  f = function...         (local o global, como una asignación)
+    //   'function a.b.c'  es  a.b.c = function...
+    //   'function a.b:m'  es  a.b.m = function(self, ...)
+    @Override
+    public Object visitFunctionStat(LuaParser.FunctionStatContext ctx) {
+        LuaParser.FuncnameContext fn = ctx.funcname();
+        List<TerminalNode> names = fn.NAME();
+        boolean isMethod = fn.COL() != null;
+        LuaClosure f = new LuaClosure(ctx.funcbody(), scope, env, chunkName, isMethod);
+
+        if (names.size() == 1) {
+            assign(new Target(names.get(0).getText(), null, null), f);
+            return null;
+        }
+        LuaValue t = readName(names.get(0).getText());
+        for (int i = 1; i < names.size() - 1; i++) {
+            t = Ops.index(t, LuaValue.of(names.get(i).getText()));
+        }
+        Ops.setIndex(t, LuaValue.of(names.get(names.size() - 1).getText()), f);
+        return null;
+    }
+
+    // '...': todos los argumentos extra. Devuelve un arreglo (varios valores),
+    // y evalOne/evalExpList deciden si se trunca o se expande.
+    @Override
+    public Object visitVarargExp(LuaParser.VarargExpContext ctx) {
+        return varargs.clone();
+    }
+
+    // ------------------------------------------------------------------
+    // Constructores de tabla
+    // ------------------------------------------------------------------
+    // Aparecen como expresión ({...}) y como argumento (f{...}); ambos llegan
+    // a visitTableconstructor.
+
+    @Override
+    public Object visitTableConstructorExp(LuaParser.TableConstructorExpContext ctx) {
+        return visit(ctx.tableconstructor());
+    }
+
+    // '{' fieldlist? '}', con tres tipos de campo:
+    //   [k] = v   KeyedField       name = v   NamedField       v   PositionalField
+    // Los campos se evalúan en orden, de izquierda a derecha.
+    // Los posicionales van con appendArray (contrato §5.5), INCLUIDOS los nil:
+    // así #{10,20,30,nil,50} da 5. Si el ÚLTIMO campo es posicional y da varios
+    // valores (una llamada o '...'), se agregan todos: {f()} guarda todo f().
+    //
+    // Como Lua real, los posicionales se acumulan y se guardan en tandas de 50
+    // (LFIELDS_PER_FLUSH), DESPUÉS de los campos con clave de su tanda. Por eso
+    // en {10, 20, [2] = "x"} gana el 20 aunque [2] esté escrito después.
+    private static final int FIELDS_PER_FLUSH = 50;
+
+    @Override
+    public Object visitTableconstructor(LuaParser.TableconstructorContext ctx) {
+        LuaTable t = new LuaTable();
+        if (ctx.fieldlist() == null) return t;
+        List<LuaParser.FieldContext> fields = ctx.fieldlist().field();
+        List<LuaValue> pending = new ArrayList<LuaValue>();
+        for (int i = 0; i < fields.size(); i++) {
+            LuaParser.FieldContext f = fields.get(i);
+            if (f instanceof LuaParser.KeyedFieldContext) {
+                LuaParser.KeyedFieldContext kf = (LuaParser.KeyedFieldContext) f;
+                LuaValue k = evalOne(kf.exp(0));
+                LuaValue v = evalOne(kf.exp(1));
+                t.rawset(k, v);
+            } else if (f instanceof LuaParser.NamedFieldContext) {
+                LuaParser.NamedFieldContext nf = (LuaParser.NamedFieldContext) f;
+                t.rawset(LuaValue.of(nf.NAME().getText()), evalOne(nf.exp()));
+            } else {
+                LuaParser.ExpContext e = ((LuaParser.PositionalFieldContext) f).exp();
+                if (i == fields.size() - 1) {
+                    for (LuaValue v : evalMulti(e)) pending.add(v);    // último: se expande
+                } else {
+                    pending.add(evalOne(e));                           // los demás: un valor
+                    if (pending.size() == FIELDS_PER_FLUSH) flush(t, pending);
+                }
+            }
+        }
+        flush(t, pending);
+        return t;
+    }
+
+    private static void flush(LuaTable t, List<LuaValue> pending) {
+        for (LuaValue v : pending) t.appendArray(v);
+        pending.clear();
+    }
+
+    // ------------------------------------------------------------------
+    // Control de flujo
+    // ------------------------------------------------------------------
+    // break lanza ControlSignal.Break y lo atrapa el bucle más cercano. Los
+    // finally de visitBlock restauran el scope en el camino.
+
+    // if e1 then b1 elseif e2 then b2 ... else bN end
+    // ctx.exp(i) es la condición de ctx.block(i); si hay un bloque más que
+    // condiciones, ese último es el else.
+    @Override
+    public Object visitIfStat(LuaParser.IfStatContext ctx) {
+        List<LuaParser.ExpContext> conds = ctx.exp();
+        for (int i = 0; i < conds.size(); i++) {
+            if (evalOne(conds.get(i)).isTruthy()) {
+                visit(ctx.block(i));
+                return null;
+            }
+        }
+        if (ctx.block().size() > conds.size()) visit(ctx.block(conds.size()));   // else
+        return null;
+    }
+
+    @Override
+    public Object visitWhileStat(LuaParser.WhileStatContext ctx) {
+        try {
+            while (evalOne(ctx.exp()).isTruthy()) visit(ctx.block());
+        } catch (ControlSignal.Break b) {
+            // sale del bucle
+        }
+        return null;
+    }
+
+    // repeat b until e: la condición se evalúa DENTRO del scope del cuerpo,
+    // así puede usar sus locales:  repeat local x = f() until x > 10
+    @Override
+    public Object visitRepeatStat(LuaParser.RepeatStatContext ctx) {
+        try {
+            while (true) {
+                Scope saved = scope;
+                scope = new Scope(saved);
+                boolean done;
+                try {
+                    runStatements(ctx.block());
+                    done = evalOne(ctx.exp()).isTruthy();
+                } finally {
+                    scope = saved;
+                }
+                if (done) break;
+            }
+        } catch (ControlSignal.Break b) {
+            // sale del bucle
+        }
+        return null;
+    }
+
+    @Override
+    public Object visitBreakStat(LuaParser.BreakStatContext ctx) {
+        throw ControlSignal.Break.INSTANCE;
+    }
+
+    // for v = e1, e2, e3 do b end  (Lua 5.4)
+    // - Si el inicio y el paso son enteros, el bucle es entero: el límite float
+    //   se redondea hacia adentro y se precalcula cuántas vueltas hay, así no
+    //   hay desbordamiento cerca de math.maxinteger.
+    // - Si no, todo se convierte a float.
+    // - Los strings numéricos se convierten, y el bucle queda float. Paso 0 es error.
+    // Cada vuelta declara v en un scope NUEVO: las closures del cuerpo capturan
+    // un v distinto en cada iteración.
+    @Override
+    public Object visitNumericForStat(LuaParser.NumericForStatContext ctx) {
+        String var = ctx.NAME().getText();
+        LuaValue init = forNumber(evalOne(ctx.exp(0)), "initial value");
+        LuaValue limit = forNumber(evalOne(ctx.exp(1)), "limit");
+        LuaValue step = ctx.exp().size() > 2 ? forNumber(evalOne(ctx.exp(2)), "step") : LuaValue.of(1L);
+
+        if (init instanceof LuaInteger && step instanceof LuaInteger) {
+            long i = ((LuaInteger) init).value;
+            long st = ((LuaInteger) step).value;
+            if (st == 0) throw new LuaError("'for' step is zero");
+            Long lim = forLimit(limit, st);
+            if (lim == null || (st > 0 ? i > lim : i < lim)) return null;   // no entra
+            // Número de vueltas restantes, como entero sin signo (igual que lvm.c).
+            long count = st > 0 ? Long.divideUnsigned(lim - i, st)
+                                : Long.divideUnsigned(i - lim, -(st + 1) + 1L);
+            while (true) {
+                if (!loopBody(var, LuaValue.of(i), ctx.block())) break;
+                if (count-- == 0) break;
+                i += st;
+            }
+        } else {
+            double i = toDouble(init), lim = toDouble(limit), st = toDouble(step);
+            if (st == 0) throw new LuaError("'for' step is zero");
+            for (; st > 0 ? i <= lim : i >= lim; i += st) {
+                if (!loopBody(var, LuaValue.of(i), ctx.block())) break;
+            }
+        }
+        return null;
+    }
+
+    // Valor de control del for. Un string se convierte con la coerción de Ops
+    // ("1" + 0) y, como en Lua, queda float: for k = "1", 2 da 1.0 y 2.0.
+    private static LuaValue forNumber(LuaValue v, String what) {
+        if (v instanceof LuaInteger || v instanceof LuaFloat) return v;
+        if (v instanceof LuaString) {
+            try {
+                return LuaValue.of(toDouble(Ops.arith("+", v, LuaValue.of(0L))));
+            } catch (LuaError e) {
+                // no es un número: cae al error de abajo
+            }
+        }
+        throw new LuaError("bad 'for' " + what + " (number expected, got " + v.typeName() + ")");
+    }
+
+    private static double toDouble(LuaValue n) {
+        return n instanceof LuaInteger ? ((LuaInteger) n).value : ((LuaFloat) n).value;
+    }
+
+    // Límite de un for entero. null si el bucle no debe ejecutarse.
+    private static Long forLimit(LuaValue limit, long step) {
+        if (limit instanceof LuaInteger) return ((LuaInteger) limit).value;
+        double d = ((LuaFloat) limit).value;
+        double f = step > 0 ? Math.floor(d) : Math.ceil(d);
+        if (Double.isNaN(f)) return null;
+        if (f >= 9.223372036854775807E18) return step > 0 ? Long.MAX_VALUE : null;
+        if (f < -9.223372036854775808E18) return step < 0 ? Long.MIN_VALUE : null;
+        return (long) f;
+    }
+
+    // Una vuelta de un for: scope nuevo con la variable del bucle.
+    // Devuelve false si el cuerpo hizo break.
+    private boolean loopBody(String var, LuaValue value, LuaParser.BlockContext body) {
+        Scope saved = scope;
+        scope = new Scope(saved);
+        try {
+            scope.declare(var, value);
+            visit(body);
+            return true;
+        } catch (ControlSignal.Break b) {
+            return false;
+        } finally {
+            scope = saved;
+        }
+    }
+
+    // for k, v in explist do b end
+    // explist da (f, s, control). Cada vuelta llama f(s, control); si el primer
+    // resultado es nil termina, si no pasa a ser el nuevo control.
+    // Así funcionan pairs/ipairs: devuelven (next, t, nil) o similar.
+    @Override
+    public Object visitGenericForStat(LuaParser.GenericForStatContext ctx) {
+        List<TerminalNode> names = ctx.namelist().NAME();
+        LuaValue[] init = evalExpList(ctx.explist());
+        LuaValue f = init.length > 0 ? init[0] : LuaNil.NIL;
+        LuaValue s = init.length > 1 ? init[1] : LuaNil.NIL;
+        LuaValue control = init.length > 2 ? init[2] : LuaNil.NIL;
+        int line = ctx.getStart().getLine();
+
+        while (true) {
+            Interpreter.LINE.set(line);                  // el cuerpo movió la línea
+            LuaValue[] rs = Ops.call(f, new LuaValue[] { s, control });
+            LuaValue first = rs.length > 0 ? rs[0] : LuaNil.NIL;
+            if (first == LuaNil.NIL) break;
+            control = first;
+
+            Scope saved = scope;
+            scope = new Scope(saved);
+            try {
+                for (int i = 0; i < names.size(); i++) {
+                    scope.declare(names.get(i).getText(), i < rs.length ? rs[i] : LuaNil.NIL);
+                }
+                visit(ctx.block());
+            } catch (ControlSignal.Break b) {
+                break;
+            } finally {
+                scope = saved;
+            }
+        }
+        return null;
+    }
+
+    // ------------------------------------------------------------------
+    // Sentencias y expresiones aún no implementadas
+    // ------------------------------------------------------------------
+    // Sin estos métodos, el visitor por defecto recorre los hijos en vez de
+    // fallar: por ejemplo, ejecutaría el cuerpo de un while una sola vez.
+
+    @Override
+    public Object visitDoStat(LuaParser.DoStatContext ctx) {
+        visit(ctx.block());
+        return null;
+    }
+
+    @Override public Object visitGotoStat(LuaParser.GotoStatContext ctx)             { return todo(ctx); }
+    @Override public Object visitLabelStat(LuaParser.LabelStatContext ctx)           { return todo(ctx); }
+
+    private Object todo(ParserRuleContext ctx) {
+        throw new UnsupportedOperationException("TODO A: "
+                + ctx.getClass().getSimpleName().replaceFirst("Context$", ""));
+    }
+
+    // ------------------------------------------------------------------
     // Expresiones simples
     // ------------------------------------------------------------------
 
@@ -170,7 +487,10 @@ public class Evaluator extends LuaParserBaseVisitor<Object> {
     // Un nombre suelto: primero local (Scope), si no, global (_ENV).
     @Override
     public Object visitNameExp(LuaParser.NameExpContext ctx) {
-        String name = ctx.NAME().getText();
+        return readName(ctx.NAME().getText());
+    }
+
+    private LuaValue readName(String name) {
         Scope.Cell c = scope.lookup(name);
         if (c != null) return c.value;                    // local o upvalue
         if (name.equals("_ENV")) return env;              // _ENV no es una global: es la tabla misma

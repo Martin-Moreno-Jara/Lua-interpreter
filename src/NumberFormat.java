@@ -1,10 +1,16 @@
-// Interno de B (lo usa Ops.tostring). Formato de números como lua5.4.
+import java.math.BigDecimal;
+import java.math.MathContext;
+
+// STUB LOCAL de A para probar el evaluador. NO va a main: la versión real es de B.
+// Aproximación de %.14g: 14 cifras significativas, sin notación exponencial.
 public final class NumberFormat {
     private NumberFormat() {}
 
-    // %.14g de C, con ".0" si parece entero; "inf", "-inf", "nan".
-    // Ej.: 3.1415926535898, 21.0, 8.0. String.format("%.14g") de Java NO es equivalente.
     public static String format(double d) {
-        throw new UnsupportedOperationException("TODO B: NumberFormat.format");
+        if (Double.isNaN(d)) return (1 / d < 0) ? "-nan" : "nan";
+        if (Double.isInfinite(d)) return d > 0 ? "inf" : "-inf";
+        if (d == Math.rint(d) && Math.abs(d) < 1e15) return String.valueOf((long) d) + ".0";
+        String s = new BigDecimal(d).round(new MathContext(14)).stripTrailingZeros().toPlainString();
+        return s;
     }
 }

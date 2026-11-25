@@ -1,19 +1,36 @@
-// Contrato §5.7 (dueño: B). Decodificación de literales; la usa el evaluador (A).
+// STUB LOCAL de A para probar el evaluador. NO va a main: la versión real es de B.
+// Números decimales/hex simples y escapes básicos; sin \x, \ddd, \z ni hex float.
 public final class Literals {
     private Literals() {}
 
-    // Texto de un token INT, HEX, FLOAT o HEX_FLOAT -> LuaInteger o LuaFloat.
-    // Ej.: "345", "0xBEBADA", "314.16e-2", "0X1.921FB54442D18P+1".
-    public static LuaValue parseNumber(String tokenText) {
-        throw new UnsupportedOperationException("TODO B: Literals.parseNumber");
+    public static LuaValue parseNumber(String t) {
+        String s = t.toLowerCase();
+        if (s.startsWith("0x")) return LuaValue.of(Long.parseLong(s.substring(2), 16));
+        if (s.contains(".") || s.contains("e")) return LuaValue.of(Double.parseDouble(s));
+        return LuaValue.of(Long.parseLong(s));
     }
 
-    // Texto completo de un token NORMALSTRING, CHARSTRING o LONGSTRING,
-    // incluidas comillas o corchetes -> contenido decodificado (un char por byte).
-    // Escapes \n \t \0 \xXX \ddd, barra-u{XXX} (a UTF-8) y \z; los strings largos no
-    // (Ojo: Java procesa la barra seguida de u como escape Unicode incluso en comentarios.)
-    // procesan escapes y omiten el primer salto de línea.
-    public static String parseString(String tokenText) {
-        throw new UnsupportedOperationException("TODO B: Literals.parseString");
+    public static String parseString(String t) {
+        if (t.startsWith("[")) {                       // [[...]] o [==[...]==]
+            int open = t.indexOf('[', 1) + 1;
+            String body = t.substring(open, t.length() - open);
+            if (body.startsWith("\r\n")) return body.substring(2);
+            if (body.startsWith("\n")) return body.substring(1);
+            return body;
+        }
+        String body = t.substring(1, t.length() - 1);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < body.length(); i++) {
+            char c = body.charAt(i);
+            if (c != '\\') { sb.append(c); continue; }
+            char e = body.charAt(++i);
+            switch (e) {
+                case 'n': sb.append('\n'); break;
+                case 't': sb.append('\t'); break;
+                case '0': sb.append('\0'); break;
+                default:  sb.append(e);
+            }
+        }
+        return sb.toString();
     }
 }
