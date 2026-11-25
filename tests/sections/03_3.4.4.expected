@@ -1,0 +1,11 @@
+
+--- 3.4.4 Relational Operators ---
+Igualdad (Mismo tipo y valor):	true
+Igualdad (Fallo por tipo distinto):	false
+Desigualdad (~=):	true
+Comparacion de Strings (Lexicografica):	true
+Igualdad de Tablas (Referencia, debe ser false):	false
+Igualdad de Tablas (Misma Referencia, true):	true
+NaN es menor que NaN (false):	false
+NaN es igual a NaN (false):	false
+NaN es mayor o igual a NaN (false):	false

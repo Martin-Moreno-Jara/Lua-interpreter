@@ -1,0 +1,10 @@
+--- 3.4.1 Arithmetic Operators ---
+Suma (Int + Int = Int):	15
+Suma (Int + Float = Float):	13.14
+Division Float (/):	3.3333333333333
+Division Entera (//):	3
+Division Entera Negativa (hacia -infinito):	-4
+Modulo (%):	1
+Modulo Negativo:	2
+Exponenciacion (^, siempre float):	8.0
+Menos Unario:	-10

@@ -1,0 +1,6 @@
+
+--- 2.3 Error Handling ---
+Resultado de pcall (Debe ser false):	false
+Mensaje atrapado por pcall:	tests/sections/01_2.3.lua:49: Este es un error simulado para pcall
+Resultado de xpcall (Debe ser false):	false
+Mensaje atrapado por xpcall:	TRACEBACK GENERADO -> Objeto de error no-string

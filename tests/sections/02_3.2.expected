@@ -1,0 +1,6 @@
+
+--- 3.2 y 3.3.3 Variables y Asignacion Multiple ---
+Original:	1	2	3
+Permutado (a,b,c = c,a,b):	3	1	2
+Evaluacion estricta de indices:
+i:	2	t[1]:	20	t[2]:	nil

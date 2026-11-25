@@ -26,6 +26,6 @@ replay_pid*
 gen/
 out/
 grammar/.antlr/
-CLAUDE.md
 dist/
 /out-idea/
+out-test/

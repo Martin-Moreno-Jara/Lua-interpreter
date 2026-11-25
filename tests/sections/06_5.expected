@@ -1,0 +1,4 @@
+
+5.BUCLES DE REFERENCIA:
+cthulhu[cthulhu] ->	El MDSI por referencia
+cthulhu[void] es igual a cthulhu? ->	true

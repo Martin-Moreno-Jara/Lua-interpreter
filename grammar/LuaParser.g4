@@ -15,7 +15,6 @@ parser grammar LuaParser;
 
 options {
     tokenVocab = LuaLexer;
-    superClass = LuaParserBase;
 }
 
 // Insert here @header for parser.
@@ -33,21 +32,21 @@ block
     ;
 
 stat
-    : ';'
-    | varlist '=' explist
-    | functioncall
-    | label
-    | 'break'
-    | 'goto' NAME
-    | 'do' block 'end'
-    | 'while' exp 'do' block 'end'
-    | 'repeat' block 'until' exp
-    | 'if' exp 'then' block ('elseif' exp 'then' block)* ('else' block)? 'end'
-    | 'for' NAME '=' exp ',' exp (',' exp)? 'do' block 'end'
-    | 'for' namelist 'in' explist 'do' block 'end'
-    | 'function' funcname funcbody
-    | 'local' 'function' NAME funcbody
-    | 'local' attnamelist ('=' explist)?
+    : ';'                                                                     # EmptyStat
+    | varlist '=' explist                                                     # AssignStat
+    | functioncall                                                            # CallStat
+    | label                                                                   # LabelStat
+    | 'break'                                                                 # BreakStat
+    | 'goto' NAME                                                             # GotoStat
+    | 'do' block 'end'                                                        # DoStat
+    | 'while' exp 'do' block 'end'                                            # WhileStat
+    | 'repeat' block 'until' exp                                              # RepeatStat
+    | 'if' exp 'then' block ('elseif' exp 'then' block)* ('else' block)? 'end' # IfStat
+    | 'for' NAME '=' exp ',' exp (',' exp)? 'do' block 'end'                  # NumericForStat
+    | 'for' namelist 'in' explist 'do' block 'end'                            # GenericForStat
+    | 'function' funcname funcbody                                            # FunctionStat
+    | 'local' 'function' NAME funcbody                                        # LocalFunctionStat
+    | 'local' attnamelist ('=' explist)?                                      # LocalStat
     ;
 
 attnamelist
@@ -82,43 +81,57 @@ explist
     : exp (',' exp)*
     ;
 
+// Earlier alternatives bind tighter (Lua 5.4 manual, section 3.4.8).
+// '^' goes before the unary operators so that -2^2 == -(2^2).
 exp
-    : 'nil'
-    | 'false'
-    | 'true'
-    | number
-    | string
-    | '...'
-    | functiondef
-    | prefixexp
-    | tableconstructor
-    | <assoc = right> exp ('^') exp
-    | ('not' | '#' | '-' | '~') exp
-    | exp ('*' | '/' | '%' | '//') exp
-    | exp ('+' | '-') exp
-    | <assoc = right> exp ('..') exp
-    | exp ('<' | '>' | '<=' | '>=' | '~=' | '==') exp
-    | exp ('and') exp
-    | exp ('or') exp
-    | exp ('&' | '|' | '~' | '<<' | '>>') exp
-    ;
-
-// var ::=  Name | prefixexp '[' exp ']' | prefixexp '.' Name
-var
-    : NAME
-    | prefixexp ('[' exp ']' | '.' NAME)
+    : 'nil'                                                # NilExp
+    | 'false'                                              # FalseExp
+    | 'true'                                               # TrueExp
+    | number                                               # NumberExp
+    | string                                               # StringExp
+    | '...'                                                # VarargExp
+    | functiondef                                          # FunctionDefExp
+    | prefixexp                                            # PrefixExpExp
+    | tableconstructor                                     # TableConstructorExp
+    | <assoc = right> exp op = '^' exp                     # PowExp
+    | op = ('not' | '#' | '-' | '~') exp                   # UnaryExp
+    | exp op = ('*' | '/' | '//' | '%') exp                # MulExp
+    | exp op = ('+' | '-') exp                             # AddExp
+    | <assoc = right> exp op = '..' exp                    # ConcatExp
+    | exp op = ('<<' | '>>') exp                           # ShiftExp
+    | exp op = '&' exp                                     # BitAndExp
+    | exp op = '~' exp                                     # BitXorExp
+    | exp op = '|' exp                                     # BitOrExp
+    | exp op = ('<' | '>' | '<=' | '>=' | '~=' | '==') exp # CompareExp
+    | exp op = 'and' exp                                   # AndExp
+    | exp op = 'or' exp                                    # OrExp
     ;
 
 // prefixexp ::= var | functioncall | '(' exp ')'
+// var and functioncall are inlined here so the left recursion is direct
+// (ANTLR rewrites it) and the tree nests: a -> a.b -> a.b[c] -> a.b[c](x).
 prefixexp
-    : { this.IsFunctionCall() }? NAME ( '[' exp ']' | '.' NAME )*
-    | functioncall ( '[' exp ']' | '.' NAME )*
-    | '(' exp ')' ( '[' exp ']' | '.' NAME )*
+    : NAME                    # NameExp
+    | '(' exp ')'             # ParenExp
+    | prefixexp '[' exp ']'   # IndexExp
+    | prefixexp '.' NAME      # FieldExp
+    | prefixexp args          # CallExp
+    | prefixexp ':' NAME args # MethodCallExp
     ;
 
-// functioncall ::=  prefixexp args | prefixexp ':' Name args;
+// var ::= Name | prefixexp '[' exp ']' | prefixexp '.' Name
+// Only these forms may be assigned to, so (a) = 1 stays a syntax error.
+var
+    : NAME                  # NameVar
+    | prefixexp '[' exp ']' # IndexVar
+    | prefixexp '.' NAME    # FieldVar
+    ;
+
+// functioncall ::= prefixexp args | prefixexp ':' Name args
+// Only calls may be statements, so `a.b` alone stays a syntax error.
 functioncall
-    :  ( ( NAME | '(' exp ')' ) ( '[' exp ']' | '.' NAME )* ( args | ':' NAME args ) ) ( ( '[' exp ']' | '.' NAME )* ( args | ':' NAME args ) )*
+    : prefixexp args          # PlainCall
+    | prefixexp ':' NAME args # MethodCall
     ;
 
 args
@@ -154,9 +167,9 @@ fieldlist
     ;
 
 field
-    : '[' exp ']' '=' exp
-    | NAME '=' exp
-    | exp
+    : '[' exp ']' '=' exp # KeyedField
+    | NAME '=' exp        # NamedField
+    | exp                 # PositionalField
     ;
 
 fieldsep

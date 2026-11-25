@@ -1,0 +1,7 @@
+--- 3.1 Lexical Conventions ---
+Linea1
+	TabAB☃ContinuacionSinEspacios
+Texto
+Multilinea
+Ignora secuencias \n y usa literal
+345	12499674	3.1416	3.1415926535898

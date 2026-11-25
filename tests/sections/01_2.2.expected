@@ -1,0 +1,11 @@
+
+--- 2.2 Scopes, Variables, and Environments ---
+Variable global/exterior inicial:	10
+  Bloque 1 - local x = x:	10
+    Bloque 2 anidado - local x = x + 1:	12
+  Bloque 1 tras anidamiento:	11
+Variable global/exterior tras los bloques:	10
+Evaluando Closures:
+  Closure 1 (Llamada 1):	21
+  Closure 1 (Llamada 2):	22
+  Closure 2 (Llamada 1):	21

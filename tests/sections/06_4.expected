@@ -1,0 +1,8 @@
+
+4. TRUNCAMIENTO MULTIRESOLUCIÓN EN EL CONSTRUCTOR:
+Longitud de la tabla de primer retorno alterado por __len:	99
+Iterando la lista deformada (truncamientos intermedios, expansion final):
+  Indice 1 ->	1
+  Indice 2 ->	Tabla_Corrupta
+  Indice 3 ->	X
+  Indice 4 ->	Y

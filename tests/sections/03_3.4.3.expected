@@ -1,0 +1,6 @@
+
+--- 3.4.3 Coercions and Conversions ---
+Coercion aritmetica (String a Numero):	15
+Coercion aritmetica Float a Numero:	21.0
+Bitwise de Float representable como Int:	0
+Fallo esperado en Bitwise String a Int:	true

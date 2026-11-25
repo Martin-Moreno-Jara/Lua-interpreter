@@ -1,0 +1,7 @@
+1. EL VACÍO INFINITO (Metatabla autorreferencial recursiva):
+  [Descendiendo al vacio mediante la clave inexistente: mad]
+  [Descendiendo al vacio mediante la clave inexistente: des]
+  [Descendiendo al vacio mediante la clave inexistente: rui]
+  [Descendiendo al vacio mediante la clave inexistente: mor]
+Resultado de sumar cadena tras 4 accesos nulos:	Eco final: grito final
+Invocando al Vacio como funcion (__call):	8967

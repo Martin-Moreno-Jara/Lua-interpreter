@@ -1,0 +1,7 @@
+
+--- 3.4.8 Precedence ---
+Precedencia Aritmetica (10 + 2 * 5):	20
+Precedencia Exponenciacion y Unario (-2^2 es -(2^2)):	-4.0
+Asociatividad Derecha de Exponenciacion (2^3^2):	512.0
+Asociatividad Derecha Concatenacion:	abc
+Precedencia Logica vs Relacional:	true

@@ -1,0 +1,60 @@
+# Secciones de los casos de prueba. Fuente de verdad para tests/gen_sections.py
+# y para LuaTestCasesTest.
+#
+# Columnas (separadas por espacios; el título es el resto de la línea):
+#   id      identificador único; nombre de tests/sections/<id>.lua y .expected
+#   caso    número del caso en test_cases/
+#   dueños  integrantes responsables según CLAUDE.md §7 (A, B, C)
+#   líneas  líneas de test_cases/<caso>.in que forman el fragmento: rangos
+#           separados por comas; "end" es la última línea. Incluye el código
+#           inicial del que depende la sección (p. ej. 1-35 en el caso 05).
+#   título  descripción legible
+#
+# Las líneas no incluidas se dejan en blanco, así los números de línea (y los
+# prefijos de error "archivo:línea:") coinciden con el original.
+# Si cambias este archivo, regenera con: python3 tests/gen_sections.py
+
+01_2.1      01  B,C    1-17          2.1 Values and Types
+01_2.2      01  A      18-46         2.2 Scopes, Variables, and Environments
+01_2.3      01  C      47-61         2.3 Error Handling
+01_2.4      01  B      62-108        2.4 Metatables and Metamethods
+01_2.5      01  A,B,C  109-135       2.5 Garbage Collection (tabla débil y <close>)
+01_2.6      01  C      136-end       2.6 Coroutines
+
+02_3.1      02  B      1-16          3.1 Lexical Conventions
+02_3.2      02  A      17-28         3.2 y 3.3.3 Variables y Asignacion Multiple
+02_3.3.1    02  A      29-35         3.3.1 y 3.3.6 Bloques y Llamadas
+02_3.3.4    02  A      36-64         3.3.4 Control Structures
+02_3.3.5    02  A      65-82         3.3.5 For Statement
+02_3.3.7    02  A,C    83-115        3.3.7 y 3.3.8 Variable Declarations (<const> y <close>)
+02_3.3.2    02  A,C    116-end       3.3.2 Chunks y global (load, _ENV)
+
+03_3.4.1    03  B      1-13          3.4.1 Arithmetic Operators
+03_3.4.2    03  B      14-25         3.4.2 Bitwise Operators
+03_3.4.3    03  B      26-35         3.4.3 Coercions and Conversions
+03_3.4.4    03  B      36-51         3.4.4 Relational Operators
+03_3.4.5    03  A      52-68         3.4.5 Logical Operators
+03_3.4.6    03  B      69-73         3.4.6 Concatenation
+03_3.4.7    03  A,B    74-88         3.4.7 The Length Operator
+03_3.4.8    03  A,B    89-end        3.4.8 Precedence
+
+04_3.4.9    04  A,B    1-29          3.4.9 Table Constructors
+04_3.4.10   04  A      30-46         3.4.10 Function Calls
+04_3.4.11   04  A,C    47-77         3.4.11 Function Definitions y Variadics
+04_3.4.12   04  A      78-end        3.4.12 Multiple Results and Adjustment
+
+05_1        05  A,B    1-35,36-37    1. Elemento posicional via IIFE y left shift
+05_2        05  B      1-35,38-40    2. Clave dinamica calculada
+05_3        05  A,B    1-35,38,41    3. Funcion en clave dinamica (fallo de tipo)
+05_4        05  A,B    1-35,38,42-43 4. Funcion en clave dinamica (acierto de tipo)
+05_5        05  A,B    1-35,44-45    5. Expresion loca (short-circuit, coercion, #)
+05_6        05  A      1-35,46-48    6. Array con multirresultados anidados
+05_7        05  A,B    1-35,49-51    7. __call a sub-tabla (self:method, XOR, >>)
+05_8        05  B,C    1-35,52-54    8. __add a sub-tabla (table.unpack de varargs)
+05_9        05  B      1-35,55-end   9. __index con XOR en la clave
+
+06_1        06  A,B    1-51,52-57    1. Vacio infinito (__index recursivo, __add, __call)
+06_2        06  A,B    1-51,58-64    2. Exploracion fractal (method chaining, __unm, __concat)
+06_3        06  A,B    1-51,65-69    3. Claves booleanas y caos de operadores
+06_4        06  A,B,C  1-51,70-77    4. Truncamiento multirresultado, __len, ipairs
+06_5        06  A,B    1-51,78-end   5. Bucles de referencia

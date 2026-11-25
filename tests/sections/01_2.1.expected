@@ -1,0 +1,11 @@
+--- 2.1 Values and Types ---
+Tipo de nil:      	nil
+Tipo de boolean:  	boolean
+Tipo de number:   	number
+Tipo de string:   	string
+Tipo de function: 	function
+Tipo de thread:   	thread
+Tipo de userdata: 	userdata
+Tipo de table:    	table
+Equivalencia float/int en índice (a[2.0] == a[2]):	true
+Syntactic sugar (record.name == record['name']):  	true

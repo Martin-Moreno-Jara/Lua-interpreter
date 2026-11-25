@@ -1,0 +1,10 @@
+
+--- 3.4.12 Lists of Expressions, Multiple Results, and Adjustment ---
+Asignacion multiple exacta:	10	20	30
+Asignacion con extras truncados:	10	20
+Asignacion con faltantes llenados con nil:	10	20	30	nil
+Asignacion truncada + multiple final:	a	10	20
+Forzado a 1 resultado mediante parentesis:	10
+Print wrapper recibiendo multires:	f_multi retorna:	10	20	30
+Print wrapper recibiendo multires:	g_multi envuelto en parentesis retorna:	a
+Retorno multires desde otra funcion (Tail call propagation):	10	20	30

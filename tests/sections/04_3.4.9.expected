@@ -1,0 +1,9 @@
+--- 3.4.9 Table Constructors ---
+Constructor Posicion 1:	Posicion 1
+Constructor Posicion 2:	Posicion 2
+Constructor Posicion 3:	Posicion 3
+Constructor Clave string (x):	100
+Constructor Clave expresion dinamica (20):	Clave Dinamica
+Constructor Clave indice explicito (30):	23
+Multires al final del constructor:	X	A	B	C
+Multires cortado en el medio:	A	X	nil
