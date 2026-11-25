@@ -23,6 +23,10 @@
 hs_err_pid*
 replay_pid*
 
+# Configuración local de IntelliJ: cada quien la mantiene en su equipo
+*.iml
+/out-idea/
+
 gen/
 out/
 grammar/.antlr/
