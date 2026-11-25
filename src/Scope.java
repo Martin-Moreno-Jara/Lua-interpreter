@@ -14,14 +14,14 @@ public class Scope {
 
     }
 
-    // 'local x = v': crea una variable NUEVA en este scope
+    // Añadir una variable a la tabla de símbolos
     public Cell declare(String name, LuaValue v) {
         Cell c = new Cell(v);
         this.symbolTable.put(name, c);
         return c;
      }
 
-    // busca x en este scope y luego hacia arriba; null si no existe
+    // Buscar una variable en la tabla de símbolos, un scope a la vez
     public Cell lookup(String name) { 
         Scope curScope = this;
         Cell search;
