@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # Se usa JDK 17 porque --release 8 necesita un JDK 9 o más nuevo; con esa opción
+      # el compilador rechaza lo que el juez (Java 8) no aceptaría.
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Download dependencies
+        run: |
+          mkdir -p lib
+          curl -fsSL -o lib/antlr-4.13.2-complete.jar \
+            https://www.antlr.org/download/antlr-4.13.2-complete.jar
+          curl -fsSL -o lib/junit-platform-console-standalone-1.11.4.jar \
+            https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.11.4/junit-platform-console-standalone-1.11.4.jar
+
+      - name: Build interpreter
+        run: bash ./build.sh
+
+      - name: Check Java 8 compatibility
+        run: |
+          mkdir -p out-test/java8
+          javac --release 8 -encoding UTF-8 -cp lib/antlr-4.13.2-complete.jar \
+            -d out-test/java8 gen/*.java src/*.java
+
+      # Solo las pruebas que ya pueden pasar. Los casos completos (run_tests.sh) y las
+      # secciones de run_unit_tests.sh se agregan cuando Main y Stdlib (C) estén listos.
+      - name: Run unit tests (Persona B)
+        run: |
+          JUNIT=lib/junit-platform-console-standalone-1.11.4.jar
+          CLASSES="NumberFormatTest LuaTableTest LiteralsTest OpsArithTest OpsCompareTest OpsIndexTest OpsMetaTest OpsAccessMetaTest"
+          mkdir -p out-test
+          javac -encoding UTF-8 -cp "$JUNIT:out" -d out-test $(for c in $CLASSES; do echo "tests/$c.java"; done)
+          java -jar "$JUNIT" execute --class-path "out-test:out" \
+            $(for c in $CLASSES; do echo "--select-class $c"; done) \
+            --details=tree --disable-banner
