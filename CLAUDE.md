@@ -372,7 +372,7 @@ Moreno y Juan David Ardila Díaz.
       `__add __sub __mul __div __mod __pow __unm     __idiv __band __bor __bxor __bnot __shl __shr __concat __len __eq __lt     __le __index __newindex __call`,
       con `__index` y `__newindex` como función o como tabla, y cadenas de
       `__index`.
-- [ ] `LuaTable`: parte array más hash, normalización de claves float, borde de
+- [x] `LuaTable`: parte array más hash, normalización de claves float, borde de
       `#` igual a Lua real, `next` y modo débil.
 
 ### Persona C: Biblioteca estándar, errores y concurrencia. Asignado a: David

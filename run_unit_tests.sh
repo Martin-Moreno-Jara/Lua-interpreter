@@ -32,12 +32,13 @@ if [ $build -eq 1 ] || [ ! -d out ]; then ./build.sh; fi
 
 rm -rf out-test
 mkdir out-test
-# NumberFormatTest y LuaTableTest llaman a clases de src/ directamente, por eso necesitan out/
-javac -encoding UTF-8 -cp "$JUNIT:out" -d out-test tests/LuaTestCasesTest.java tests/NumberFormatTest.java tests/LuaTableTest.java
+# NumberFormatTest, LuaTableTest y LiteralsTest llaman a clases de src/ directamente, por eso necesitan out/
+javac -encoding UTF-8 -cp "$JUNIT:out" -d out-test tests/LuaTestCasesTest.java tests/NumberFormatTest.java tests/LuaTableTest.java tests/LiteralsTest.java
 
 java "${props[@]}" -jar "$JUNIT" execute \
   --class-path "out-test:out" \
   --select-class LuaTestCasesTest \
   --select-class NumberFormatTest \
   --select-class LuaTableTest \
+  --select-class LiteralsTest \
   --details=tree --disable-banner
