@@ -1,65 +1,41 @@
-import java.util.*;
-
-// STUB LOCAL de A para probar el evaluador. NO va a main: la versión real es de B.
-// HashMap con orden de inserción; sin parte array real ni modo débil.
+// Contrato §5.5 (dueño: B). Parte array + parte hash; modo débil según __mode.
+// Igualdad por referencia (no se sobrescribe equals/hashCode).
 public class LuaTable extends LuaValue {
-    private final LinkedHashMap<LuaValue, LuaValue> map = new LinkedHashMap<LuaValue, LuaValue>();
-    private long nextIndex = 1;
-    private LuaTable meta;
 
     @Override public String typeName() { return "table"; }
 
-    private static LuaValue norm(LuaValue k) {
-        if (k instanceof LuaFloat) {
-            double d = ((LuaFloat) k).value;
-            if (d == Math.floor(d) && !Double.isInfinite(d)) return LuaValue.of((long) d);
-        }
-        return k;
-    }
-
+    // NIL si no existe. Ignora metamétodos.
     public LuaValue rawget(LuaValue k) {
-        LuaValue v = map.get(norm(k));
-        return v == null ? LuaNil.NIL : v;
+        throw new UnsupportedOperationException("TODO B: LuaTable.rawget");
     }
 
+    // v == NIL borra; normaliza claves float con valor entero (2.0 -> 2). Ignora metamétodos.
     public void rawset(LuaValue k, LuaValue v) {
-        if (k == LuaNil.NIL) throw new LuaError("index is nil");
-        k = norm(k);
-        if (v == LuaNil.NIL) map.remove(k); else map.put(k, v);
+        throw new UnsupportedOperationException("TODO B: LuaTable.rawset");
     }
 
+    // Entrada posicional del constructor de tabla, en orden (admite NIL).
     public void appendArray(LuaValue v) {
-        rawset(LuaValue.of(nextIndex++), v);
+        throw new UnsupportedOperationException("TODO B: LuaTable.appendArray");
     }
 
+    // {clave, valor} siguiente a k (k == NIL para empezar); null al terminar.
     public LuaValue[] next(LuaValue k) {
-        Iterator<Map.Entry<LuaValue, LuaValue>> it = map.entrySet().iterator();
-        if (k != LuaNil.NIL) {
-            k = norm(k);
-            while (it.hasNext()) if (it.next().getKey().equals(k)) break;
-        }
-        if (!it.hasNext()) return null;
-        Map.Entry<LuaValue, LuaValue> e = it.next();
-        return new LuaValue[] { e.getKey(), e.getValue() };
+        throw new UnsupportedOperationException("TODO B: LuaTable.next");
     }
 
-    // Imita luaH_getn: si el último elemento de la "parte array" (lo que puso el
-    // constructor) es nil, búsqueda binaria de un borde; si no, sigue contando.
+    // Borde, sin __len.
     public long length() {
-        long n = nextIndex - 1;
-        if (n > 0 && rawget(LuaValue.of(n)) == LuaNil.NIL) {
-            long lo = 0, hi = n;
-            while (hi - lo > 1) {
-                long m = (lo + hi) >>> 1;
-                if (rawget(LuaValue.of(m)) == LuaNil.NIL) hi = m; else lo = m;
-            }
-            return lo;
-        }
-        while (map.containsKey(LuaValue.of(n + 1))) n++;
-        return n;
+        throw new UnsupportedOperationException("TODO B: LuaTable.length");
     }
 
-    public LuaTable getMetatable() { return meta; }
+    // null si no tiene.
+    public LuaTable getMetatable() {
+        throw new UnsupportedOperationException("TODO B: LuaTable.getMetatable");
+    }
 
-    public void setMetatable(LuaTable mt) { meta = mt; }
+    // Lee __mode para activar el modo débil.
+    public void setMetatable(LuaTable mt) {
+        throw new UnsupportedOperationException("TODO B: LuaTable.setMetatable");
+    }
 }
