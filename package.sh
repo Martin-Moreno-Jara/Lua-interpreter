@@ -9,6 +9,8 @@ cd "$(dirname "$0")"
 
 RUNTIME=lib/antlr4-runtime-4.13.2.jar
 ZIP=dist/lua-interpreter.zip
+# Classpath separator: ';' on Windows (Git Bash/MSYS/Cygwin), ':' elsewhere.
+case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) SEP=";" ;; *) SEP=":" ;; esac
 [ -f "$RUNTIME" ] || {
   echo "missing $RUNTIME (https://repo1.maven.org/maven2/org/antlr/antlr4-runtime/4.13.2/antlr4-runtime-4.13.2.jar)" >&2
   exit 1
@@ -24,7 +26,18 @@ trap 'status=$?; rm -rf dist/stage dist/check; [ $status -eq 0 ] || rm -f "$ZIP"
 cp gen/*.java src/*.java dist/stage/src/
 cp "$RUNTIME" dist/stage/lib/
 # Zip from inside stage/ so src/ and lib/ sit at the top level of the zip.
-(cd dist/stage && zip -qr ../lua-interpreter.zip src lib)
+# Use zip if available; otherwise the JDK's jar tool (-M: no manifest, plain zip).
+if command -v zip >/dev/null 2>&1; then
+  (cd dist/stage && zip -qr ../lua-interpreter.zip src lib)
+else
+  # jar is often not on PATH (e.g. Oracle JDK on Windows): find it under java.home.
+  JAR=$(command -v jar || true)
+  if [ -z "$JAR" ]; then
+    JHOME=$(java -XshowSettings:properties -version 2>&1 | sed -n 's/^ *java.home = //p' | tr -d '')
+    JAR="$JHOME/bin/jar"
+  fi
+  (cd dist/stage && "$JAR" cfM ../lua-interpreter.zip src lib)
+fi
 
 echo "==> Verifying the zip (Java 8 compile + test cases via stdin)"
 CHECK=dist/check
@@ -35,7 +48,7 @@ javac --release 8 -Xlint:-options -encoding UTF-8 -cp "$CHECK/lib/*" -d "$CHECK/
 fail=0
 for f in test_cases/*.in; do
   # 2>&1 so any stderr output (e.g. an ANTLR version warning) also counts as a failure.
-  out=$(java -cp "$CHECK/classes:$CHECK/lib/*" Main <"$f" 2>&1) || true
+  out=$(java -cp "$CHECK/classes${SEP}$CHECK/lib/*" Main <"$f" 2>&1) || true
   if [ "$out" = "syntax errors: 0" ]; then
     echo "PASS  $f"
   else

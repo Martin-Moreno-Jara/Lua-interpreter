@@ -8,6 +8,8 @@ cd "$(dirname "$0")"
 [ -d out ] || { echo "out/ not found: run ./build.sh first" >&2; exit 1; }
 
 CP=lib/antlr-4.13.2-complete.jar
+# Classpath separator: ';' on Windows (Git Bash/MSYS/Cygwin), ':' elsewhere.
+case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) SEP=";" ;; *) SEP=":" ;; esac
 total=0
 fail=0
 for f in test_cases/*.in; do
@@ -20,7 +22,7 @@ for f in test_cases/*.in; do
     fi
     # Run from the repo root with the relative path so error prefixes
     # (e.g. "test_cases/01.in:49:") match what lua5.4 printed.
-    if d=$(java -cp "out:$CP" Main "$f" 2>&1 | diff - "$expected"); then
+    if d=$(java -cp "out${SEP}$CP" Main "$f" 2>&1 | diff - "$expected"); then
         echo "PASS  $f"
     else
         echo "FAIL  $f"
