@@ -1,5 +1,9 @@
 import java.util.List;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.tree.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
 
 // Interno de A. Visitor sobre el árbol generado por LuaParser.
 // El tipo de retorno del visitor y la organización interna los decide A.
@@ -50,6 +54,42 @@ public class Evaluator extends LuaParserBaseVisitor<Object> {
     @Override
     public Object visitRetstat(LuaParser.RetstatContext ctx) {
         throw new ControlSignal.Return(evalExpList(ctx.explist()));
+    }
+
+    // ------------------------------------------------------------------
+    // Expresiones simples
+    // ------------------------------------------------------------------
+
+    @Override public Object visitNilExp(LuaParser.NilExpContext ctx)     { return LuaNil.NIL; }
+    @Override public Object visitTrueExp(LuaParser.TrueExpContext ctx)   { return LuaBoolean.TRUE; }
+    @Override public Object visitFalseExp(LuaParser.FalseExpContext ctx) { return LuaBoolean.FALSE; }
+
+    // B decodifica el texto del token (INT, HEX, FLOAT, HEX_FLOAT).
+    @Override
+    public Object visitNumberExp(LuaParser.NumberExpContext ctx) {
+        return Literals.parseNumber(ctx.getText());
+    }
+
+    // B decodifica el token completo, con comillas o corchetes y escapes.
+    @Override
+    public Object visitStringExp(LuaParser.StringExpContext ctx) {
+        return LuaValue.of(Literals.parseString(ctx.getText()));
+    }
+
+    // Un nombre suelto: primero local (Scope), si no, global (_ENV).
+    @Override
+    public Object visitNameExp(LuaParser.NameExpContext ctx) {
+        String name = ctx.NAME().getText();
+        Scope.Cell c = scope.lookup(name);
+        if (c != null) return c.value;                    // local o upvalue
+        if (name.equals("_ENV")) return env;              // _ENV no es una global: es la tabla misma
+        return Ops.index(env, LuaValue.of(name));         // global (nil si no existe)
+    }
+
+    // '(' exp ')': los paréntesis truncan a un valor, así (f()) da solo el primero.
+    @Override
+    public Object visitParenExp(LuaParser.ParenExpContext ctx) {
+        return evalOne(ctx.exp());
     }
 
     // ------------------------------------------------------------------
