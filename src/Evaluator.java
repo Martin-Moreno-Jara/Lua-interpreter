@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
@@ -29,24 +30,51 @@ public class Evaluator extends LuaParserBaseVisitor<Object> {
 
     // block: stat* retstat?
     // Cada bloque abre un scope hijo; al salir (normal o por excepción) se
-    // restaura el anterior, así los locales del bloque dejan de verse.
+    // restaura el anterior, así los locales del bloque dejan de verse. También
+    // cierra sus variables <close> (ver inNewBlock).
     @Override
-    public Object visitBlock(LuaParser.BlockContext ctx) {
-        Scope saved = scope;
-        scope = new Scope(saved);
-        try {
-            runStatements(ctx);
-        } finally {
-            scope = saved;
-        }
-        return null;
+    public Object visitBlock(final LuaParser.BlockContext ctx) {
+        return inNewBlock(new Supplier<Object>() {
+            @Override public Object get() {
+                runStatements(ctx);
+                return null;
+            }
+        });
     }
 
     // Ejecuta las sentencias del bloque en el scope ACTUAL, sin abrir uno nuevo.
     // Lo usan visitBlock y repeat/until (cuya condición ve los locales del cuerpo).
+    //
+    // Va por índice para soportar goto (§6): un 'goto x' lanza ControlSignal.Goto,
+    // que sube por los bloques anidados (if, while, do...) hasta el primero que
+    // tenga '::x::' entre sus sentencias. Ese bloque sigue desde la sentencia
+    // siguiente a la etiqueta, hacia adelante o hacia atrás.
     private void runStatements(LuaParser.BlockContext ctx) {
-        for (LuaParser.StatContext st : ctx.stat()) exec(st);
+        List<LuaParser.StatContext> stats = ctx.stat();
+        int i = 0;
+        while (i < stats.size()) {
+            try {
+                exec(stats.get(i));
+                i++;
+            } catch (ControlSignal.Goto g) {
+                int target = findLabel(stats, g.label);
+                if (target < 0) throw g;               // no es de este bloque: sigue subiendo
+                i = target + 1;
+            }
+        }
         if (ctx.retstat() != null) exec(ctx.retstat());
+    }
+
+    // Índice de '::name::' entre las sentencias de un bloque, o -1.
+    private static int findLabel(List<LuaParser.StatContext> stats, String name) {
+        for (int i = 0; i < stats.size(); i++) {
+            LuaParser.StatContext st = stats.get(i);
+            if (st instanceof LuaParser.LabelStatContext
+                    && ((LuaParser.LabelStatContext) st).label().NAME().getText().equals(name)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     // Ejecuta una sentencia: fija la línea y, si sale un error de runtime sin
@@ -91,14 +119,78 @@ public class Evaluator extends LuaParserBaseVisitor<Object> {
         LuaValue[] vs = evalExpList(ctx.explist());       // sin '=' da NONE: todos nil
         LuaParser.AttnamelistContext names = ctx.attnamelist();
         for (int i = 0; i < names.NAME().size(); i++) {
-            LuaParser.AttribContext attr = names.attrib(i);
-            if (attr.NAME() != null && attr.NAME().getText().equals("close")) {
-                throw new UnsupportedOperationException("TODO A: <close>");
-            }
+            String name = names.NAME(i).getText();
+            LuaValue v = i < vs.length ? vs[i] : LuaNil.NIL;
             // <const> solo se lee en los casos, así que es un local normal.
-            scope.declare(names.NAME(i).getText(), i < vs.length ? vs[i] : LuaNil.NIL);
+            scope.declare(name, v);
+            LuaParser.AttribContext attr = names.attrib(i);
+            if (attr.NAME() != null && attr.NAME().getText().equals("close")) registerClose(name, v);
         }
         return null;
+    }
+
+    // ------------------------------------------------------------------
+    // <close>
+    // ------------------------------------------------------------------
+    // 'local x <close> = v' registra v en el bloque actual. Cuando el bloque
+    // termina, por la razón que sea (fin normal, return, break, goto o error),
+    // se llama __close(v, err) en orden inverso al de declaración. err es nil,
+    // salvo si se sale por un error: entonces es el valor del error (§6).
+    // __close no está en Ops (§5.4): esta lógica es de A.
+
+    private List<LuaValue> toClose;   // valores <close> del bloque en curso; null si no hay
+
+    private void registerClose(String name, LuaValue v) {
+        if (v == LuaNil.NIL || v == LuaBoolean.FALSE) return;          // se permiten y se ignoran
+        if (closeHandler(v) == LuaNil.NIL) {
+            throw new LuaError("variable '" + name + "' got a non-closable value");
+        }
+        if (toClose == null) toClose = new ArrayList<LuaValue>();
+        toClose.add(v);
+    }
+
+    private static LuaValue closeHandler(LuaValue v) {
+        if (v instanceof LuaTable) {
+            LuaTable mt = ((LuaTable) v).getMetatable();
+            if (mt != null) return mt.rawget(LuaValue.of("__close"));
+        }
+        return LuaNil.NIL;
+    }
+
+    private void closePending(LuaValue err) {
+        List<LuaValue> list = toClose;
+        toClose = null;
+        if (list == null) return;
+        for (int i = list.size() - 1; i >= 0; i--) {
+            LuaValue v = list.get(i);
+            Ops.call(closeHandler(v), new LuaValue[] { v, err });
+        }
+    }
+
+    // Corre body en un bloque nuevo: scope nuevo y lista de <close> propia.
+    // Al salir cierra lo pendiente y restaura ambos, pase lo que pase.
+    private <T> T inNewBlock(Supplier<T> body) {
+        Scope savedScope = scope;
+        List<LuaValue> savedClose = toClose;
+        scope = new Scope(savedScope);
+        toClose = null;
+        try {
+            T result;
+            try {
+                result = body.get();
+            } catch (LuaError e) {
+                closePending(e.value);                 // salida por error: __close(v, err)
+                throw e;
+            } catch (ControlSignal s) {
+                closePending(LuaNil.NIL);              // return, break o goto: salida normal
+                throw s;
+            }
+            closePending(LuaNil.NIL);
+            return result;
+        } finally {
+            scope = savedScope;
+            toClose = savedClose;
+        }
     }
 
     // varlist '=' explist, en tres fases (así 'i, t[i] = i+1, 20' usa el i viejo):
@@ -299,19 +391,16 @@ public class Evaluator extends LuaParserBaseVisitor<Object> {
     // repeat b until e: la condición se evalúa DENTRO del scope del cuerpo,
     // así puede usar sus locales:  repeat local x = f() until x > 10
     @Override
-    public Object visitRepeatStat(LuaParser.RepeatStatContext ctx) {
+    public Object visitRepeatStat(final LuaParser.RepeatStatContext ctx) {
+        Supplier<Boolean> iteration = new Supplier<Boolean>() {
+            @Override public Boolean get() {
+                runStatements(ctx.block());
+                return evalOne(ctx.exp()).isTruthy();   // mismo scope que el cuerpo
+            }
+        };
         try {
-            while (true) {
-                Scope saved = scope;
-                scope = new Scope(saved);
-                boolean done;
-                try {
-                    runStatements(ctx.block());
-                    done = evalOne(ctx.exp()).isTruthy();
-                } finally {
-                    scope = saved;
-                }
-                if (done) break;
+            while (!inNewBlock(iteration)) {
+                // otra vuelta
             }
         } catch (ControlSignal.Break b) {
             // sale del bucle
@@ -322,6 +411,21 @@ public class Evaluator extends LuaParserBaseVisitor<Object> {
     @Override
     public Object visitBreakStat(LuaParser.BreakStatContext ctx) {
         throw ControlSignal.Break.INSTANCE;
+    }
+
+    // goto x: lo resuelve runStatements del bloque que tenga '::x::'.
+    // Limitación conocida: en un salto hacia atrás, los locales declarados después
+    // de la etiqueta siguen visibles hasta que se vuelven a declarar (en Lua
+    // real salen de scope). Ningún caso depende de eso.
+    @Override
+    public Object visitGotoStat(LuaParser.GotoStatContext ctx) {
+        throw new ControlSignal.Goto(ctx.NAME().getText());
+    }
+
+    // ::x:: no hace nada al ejecutarse; solo marca una posición del bloque.
+    @Override
+    public Object visitLabelStat(LuaParser.LabelStatContext ctx) {
+        return null;
     }
 
     // for v = e1, e2, e3 do b end  (Lua 5.4)
@@ -456,8 +560,6 @@ public class Evaluator extends LuaParserBaseVisitor<Object> {
         return null;
     }
 
-    @Override public Object visitGotoStat(LuaParser.GotoStatContext ctx)             { return todo(ctx); }
-    @Override public Object visitLabelStat(LuaParser.LabelStatContext ctx)           { return todo(ctx); }
 
     private Object todo(ParserRuleContext ctx) {
         throw new UnsupportedOperationException("TODO A: "

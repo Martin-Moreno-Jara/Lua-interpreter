@@ -43,8 +43,18 @@ public class LuaTable extends LuaValue {
         return new LuaValue[] { e.getKey(), e.getValue() };
     }
 
+    // Imita luaH_getn: si el último elemento de la "parte array" (lo que puso el
+    // constructor) es nil, búsqueda binaria de un borde; si no, sigue contando.
     public long length() {
-        long n = 0;
+        long n = nextIndex - 1;
+        if (n > 0 && rawget(LuaValue.of(n)) == LuaNil.NIL) {
+            long lo = 0, hi = n;
+            while (hi - lo > 1) {
+                long m = (lo + hi) >>> 1;
+                if (rawget(LuaValue.of(m)) == LuaNil.NIL) hi = m; else lo = m;
+            }
+            return lo;
+        }
         while (map.containsKey(LuaValue.of(n + 1))) n++;
         return n;
     }

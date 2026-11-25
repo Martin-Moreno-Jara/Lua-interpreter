@@ -154,8 +154,8 @@ public final class Ops {
     private static boolean isNum(LuaValue v) { return v instanceof LuaInteger || v instanceof LuaFloat; }
 
     public static boolean eq(LuaValue a, LuaValue b) {
+        if (isNum(a) && isNum(b)) return dbl(a) == dbl(b);     // antes que identidad: NaN ~= NaN
         if (a == b) return true;
-        if (isNum(a) && isNum(b)) return dbl(a) == dbl(b);
         if (a.equals(b)) return true;
         if (a instanceof LuaTable && b instanceof LuaTable) {
             LuaValue r = binMeta("__eq", a, b);
