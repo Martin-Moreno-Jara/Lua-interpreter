@@ -32,9 +32,11 @@ if [ $build -eq 1 ] || [ ! -d out ]; then ./build.sh; fi
 
 rm -rf out-test
 mkdir out-test
-javac -encoding UTF-8 -cp "$JUNIT" -d out-test tests/LuaTestCasesTest.java
+# NumberFormatTest llama a NumberFormat directamente, por eso necesita out/
+javac -encoding UTF-8 -cp "$JUNIT:out" -d out-test tests/LuaTestCasesTest.java tests/NumberFormatTest.java
 
 java "${props[@]}" -jar "$JUNIT" execute \
-  --class-path out-test \
+  --class-path "out-test:out" \
   --select-class LuaTestCasesTest \
+  --select-class NumberFormatTest \
   --details=tree --disable-banner

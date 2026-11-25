@@ -365,7 +365,7 @@ Moreno y Juan David Ardila Díaz.
 - [ ] `Literals`: escapes `\n \t \0 \xXX \ddd \u{XXX}` (a UTF-8) y `\z`; strings
       largos `[==[ ]==]` (sin el primer salto de línea y sin procesar escapes);
       números decimales, hexadecimales, con exponente y hex float.
-- [ ] `NumberFormat`: el `%.14g` de Lua.
+- [X] `NumberFormat`: el `%.14g` de Lua.
 - [ ] `Ops`: aritmética, operaciones de bits, coerciones, comparaciones (NaN,
       `10 == 10.0`, orden lexicográfico de strings), concatenación y longitud.
 - [ ] Todos los metamétodos:
