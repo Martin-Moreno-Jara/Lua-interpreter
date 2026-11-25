@@ -1,7 +1,8 @@
-// Contrato §5.1 (dueño: B). String de Lua: cada char de Java es un byte (ISO-8859-1).
+/** String de Lua; cada carácter de Java guarda exactamente un byte, como en Lua. Contrato §5.1. */
 public final class LuaString extends LuaValue {
     public final String value;
 
+    /** Crea un string con el texto dado. */
     public LuaString(String value) { this.value = value; }
 
     @Override public String typeName() { return "string"; }

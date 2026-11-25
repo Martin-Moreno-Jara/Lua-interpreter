@@ -1,13 +1,14 @@
-// Contrato §5.1 (dueño: B). Subtipo entero de number.
-// Igualdad por valor entre LuaInteger. La equivalencia 2 == 2.0 como clave
-// la resuelve LuaTable.rawset normalizando floats enteros a LuaInteger.
+/** Entero de Lua, uno de los dos tipos de número (el otro es LuaFloat). Contrato §5.1. */
 public final class LuaInteger extends LuaValue {
     public final long value;
 
+    /** Crea un entero con el valor dado. */
     public LuaInteger(long value) { this.value = value; }
 
     @Override public String typeName() { return "number"; }
 
+    // Solo compara con otros enteros. Que la clave 2 y la clave 2.0 sean la misma
+    // lo resuelve LuaTable, que convierte 2.0 en 2 antes de guardar.
     @Override public boolean equals(Object o) {
         return o instanceof LuaInteger && ((LuaInteger) o).value == value;
     }
