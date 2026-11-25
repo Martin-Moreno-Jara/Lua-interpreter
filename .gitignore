@@ -29,3 +29,4 @@ grammar/.antlr/
 dist/
 .idea/
 out-test/
+.vscode
