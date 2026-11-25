@@ -93,6 +93,85 @@ public class Evaluator extends LuaParserBaseVisitor<Object> {
     }
 
     // ------------------------------------------------------------------
+    // Operadores
+    // ------------------------------------------------------------------
+    // Toda la semántica (tipos, coerciones, metamétodos, errores) vive en Ops (B).
+    // Aquí solo se evalúan los operandos, de izquierda a derecha, y se delega.
+
+    // Aritméticos y de bits: el texto del operador es justo lo que espera Ops.arith.
+    // El '~' binario es XOR (el unario está en visitUnaryExp).
+    @Override public Object visitPowExp(LuaParser.PowExpContext ctx)       { return arith(ctx.op, ctx.exp(0), ctx.exp(1)); }
+    @Override public Object visitMulExp(LuaParser.MulExpContext ctx)       { return arith(ctx.op, ctx.exp(0), ctx.exp(1)); }
+    @Override public Object visitAddExp(LuaParser.AddExpContext ctx)       { return arith(ctx.op, ctx.exp(0), ctx.exp(1)); }
+    @Override public Object visitShiftExp(LuaParser.ShiftExpContext ctx)   { return arith(ctx.op, ctx.exp(0), ctx.exp(1)); }
+    @Override public Object visitBitAndExp(LuaParser.BitAndExpContext ctx) { return arith(ctx.op, ctx.exp(0), ctx.exp(1)); }
+    @Override public Object visitBitXorExp(LuaParser.BitXorExpContext ctx) { return arith(ctx.op, ctx.exp(0), ctx.exp(1)); }
+    @Override public Object visitBitOrExp(LuaParser.BitOrExpContext ctx)   { return arith(ctx.op, ctx.exp(0), ctx.exp(1)); }
+
+    private LuaValue arith(Token op, LuaParser.ExpContext left, LuaParser.ExpContext right) {
+        LuaValue a = evalOne(left);
+        LuaValue b = evalOne(right);
+        return Ops.arith(op.getText(), a, b);
+    }
+
+    @Override
+    public Object visitConcatExp(LuaParser.ConcatExpContext ctx) {
+        LuaValue a = evalOne(ctx.exp(0));
+        LuaValue b = evalOne(ctx.exp(1));
+        return Ops.concat(a, b);
+    }
+
+    // Ops solo tiene eq, lt y le. Los demás se traducen (contrato §5.4):
+    //   a > b  ->  lt(b, a)      a >= b  ->  le(b, a)      a ~= b  ->  !eq(a, b)
+    @Override
+    public Object visitCompareExp(LuaParser.CompareExpContext ctx) {
+        LuaValue a = evalOne(ctx.exp(0));
+        LuaValue b = evalOne(ctx.exp(1));
+        boolean r;
+        switch (ctx.op.getText()) {
+            case "==": r = Ops.eq(a, b);  break;
+            case "~=": r = !Ops.eq(a, b); break;
+            case "<":  r = Ops.lt(a, b);  break;
+            case "<=": r = Ops.le(a, b);  break;
+            case ">":  r = Ops.lt(b, a);  break;
+            case ">=": r = Ops.le(b, a);  break;
+            default: throw new IllegalStateException("operador de comparación: " + ctx.op.getText());
+        }
+        return LuaValue.of(r);
+    }
+
+    // Unarios: not lo resuelve A (es solo veracidad); el resto va a Ops.
+    @Override
+    public Object visitUnaryExp(LuaParser.UnaryExpContext ctx) {
+        LuaValue a = evalOne(ctx.exp());
+        switch (ctx.op.getText()) {
+            case "not": return LuaValue.of(!a.isTruthy());
+            case "-":   return Ops.unm(a);
+            case "~":   return Ops.bnot(a);
+            case "#":   return Ops.len(a);
+            default: throw new IllegalStateException("operador unario: " + ctx.op.getText());
+        }
+    }
+
+    // and / or: cortocircuito. El lado derecho solo se evalúa si hace falta, y
+    // el resultado es uno de los operandos, no un booleano:
+    //   nil and f()  -> nil (f no se llama)      1 or f()  -> 1
+    //   false or "x" -> "x"                      1 and 2   -> 2
+    @Override
+    public Object visitAndExp(LuaParser.AndExpContext ctx) {
+        LuaValue a = evalOne(ctx.exp(0));
+        if (!a.isTruthy()) return a;
+        return evalOne(ctx.exp(1));
+    }
+
+    @Override
+    public Object visitOrExp(LuaParser.OrExpContext ctx) {
+        LuaValue a = evalOne(ctx.exp(0));
+        if (a.isTruthy()) return a;
+        return evalOne(ctx.exp(1));
+    }
+
+    // ------------------------------------------------------------------
     // Helpers de evaluación
     // ------------------------------------------------------------------
     // Convención: visitar una expresión devuelve un LuaValue (un valor) o un
