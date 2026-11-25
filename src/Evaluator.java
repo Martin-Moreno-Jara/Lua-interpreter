@@ -72,6 +72,82 @@ public class Evaluator extends LuaParserBaseVisitor<Object> {
     }
 
     // ------------------------------------------------------------------
+    // local y asignación
+    // ------------------------------------------------------------------
+
+    // 'local' attnamelist ('=' explist)?
+    // Primero se evalúa el lado derecho y DESPUÉS se declaran los nombres, así
+    // en 'local x = x' el x de la derecha es el de afuera.
+    // Si faltan valores, los nombres sobrantes quedan en nil; si sobran, se descartan.
+    @Override
+    public Object visitLocalStat(LuaParser.LocalStatContext ctx) {
+        LuaValue[] vs = evalExpList(ctx.explist());       // sin '=' da NONE: todos nil
+        LuaParser.AttnamelistContext names = ctx.attnamelist();
+        for (int i = 0; i < names.NAME().size(); i++) {
+            LuaParser.AttribContext attr = names.attrib(i);
+            if (attr.NAME() != null && attr.NAME().getText().equals("close")) {
+                throw new UnsupportedOperationException("TODO A: <close>");
+            }
+            // <const> solo se lee en los casos, así que es un local normal.
+            scope.declare(names.NAME(i).getText(), i < vs.length ? vs[i] : LuaNil.NIL);
+        }
+        return null;
+    }
+
+    // varlist '=' explist, en tres fases (así 'i, t[i] = i+1, 20' usa el i viejo):
+    //   1. evaluar los destinos: la tabla y la clave de cada t[k] / t.k
+    //   2. evaluar todos los valores de la derecha
+    //   3. asignar
+    @Override
+    public Object visitAssignStat(LuaParser.AssignStatContext ctx) {
+        List<LuaParser.VarContext> vars = ctx.varlist().var();
+        Target[] targets = new Target[vars.size()];
+        for (int i = 0; i < targets.length; i++) targets[i] = target(vars.get(i));   // fase 1
+
+        LuaValue[] vs = evalExpList(ctx.explist());                                 // fase 2
+
+        for (int i = targets.length - 1; i >= 0; i--) {                             // fase 3
+            assign(targets[i], i < vs.length ? vs[i] : LuaNil.NIL);
+        }
+        return null;
+    }
+
+    // Un destino de asignación ya evaluado: o un nombre, o una tabla con su clave.
+    private static final class Target {
+        final String name;      // NameVar (table y key en null)
+        final LuaValue table;   // IndexVar / FieldVar
+        final LuaValue key;
+        Target(String name, LuaValue table, LuaValue key) {
+            this.name = name; this.table = table; this.key = key;
+        }
+    }
+
+    private Target target(LuaParser.VarContext v) {
+        if (v instanceof LuaParser.NameVarContext) {
+            return new Target(((LuaParser.NameVarContext) v).NAME().getText(), null, null);
+        }
+        if (v instanceof LuaParser.FieldVarContext) {
+            LuaParser.FieldVarContext f = (LuaParser.FieldVarContext) v;
+            return new Target(null, evalOne(f.prefixexp()), LuaValue.of(f.NAME().getText()));
+        }
+        LuaParser.IndexVarContext ix = (LuaParser.IndexVarContext) v;
+        LuaValue t = evalOne(ix.prefixexp());
+        LuaValue k = evalOne(ix.exp());
+        return new Target(null, t, k);
+    }
+
+    // Igual que al leer: si el nombre es local, se cambia su celda; si no, es global.
+    private void assign(Target t, LuaValue v) {
+        if (t.name == null) {
+            Ops.setIndex(t.table, t.key, v);               // __newindex lo resuelve Ops
+            return;
+        }
+        Scope.Cell c = scope.lookup(t.name);
+        if (c != null) c.value = v;
+        else Ops.setIndex(env, LuaValue.of(t.name), v);
+    }
+
+    // ------------------------------------------------------------------
     // Expresiones simples
     // ------------------------------------------------------------------
 
