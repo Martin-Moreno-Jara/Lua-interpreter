@@ -547,23 +547,13 @@ public class Evaluator extends LuaParserBaseVisitor<Object> {
         return null;
     }
 
-    // ------------------------------------------------------------------
-    // Sentencias y expresiones aún no implementadas
-    // ------------------------------------------------------------------
-    // Sin estos métodos, el visitor por defecto recorre los hijos en vez de
-    // fallar: por ejemplo, ejecutaría el cuerpo de un while una sola vez.
-
+    // do ... end: un bloque con su propio scope (visitBlock lo abre y lo cierra).
     @Override
     public Object visitDoStat(LuaParser.DoStatContext ctx) {
         visit(ctx.block());
         return null;
     }
 
-
-    private Object todo(ParserRuleContext ctx) {
-        throw new UnsupportedOperationException("TODO A: "
-                + ctx.getClass().getSimpleName().replaceFirst("Context$", ""));
-    }
 
     // ------------------------------------------------------------------
     // Expresiones simples
@@ -813,11 +803,14 @@ public class Evaluator extends LuaParserBaseVisitor<Object> {
         return out;
     }
 
-    // Si un visit devolvió null es porque ese nodo aún no está implementado.
+    // Una expresión siempre devuelve un LuaValue (o un LuaValue[] si es una llamada
+    // o '...'). Si llega null es un error del evaluador, no de Lua: se falla con
+    // el nombre del nodo en vez de dejar escapar un NullPointerException.
     private LuaValue checkValue(Object r, ParserRuleContext e) {
         if (r == null) {
-            throw new UnsupportedOperationException("TODO A: "
-                    + e.getClass().getSimpleName().replaceFirst("Context$", ""));
+            throw new IllegalStateException("el nodo "
+                    + e.getClass().getSimpleName().replaceFirst("Context$", "")
+                    + " no produjo un valor");
         }
         return (LuaValue) r;
     }

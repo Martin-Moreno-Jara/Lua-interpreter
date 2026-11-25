@@ -337,26 +337,26 @@ Moreno y Juan David Ardila Díaz.
 
 ### Persona A: Evaluador (Visitor). Asignado a: Martin
 
-- [ ] `Evaluator` extiende `LuaParserBaseVisitor`. `Interpreter.load` parsea el
+- [x] `Evaluator` extiende `LuaParserBaseVisitor`. `Interpreter.load` parsea el
       código y devuelve el chunk como `LuaFunction`.
-- [ ] Scopes léxicos y shadowing (`local x = x`), upvalues, un local nuevo por
+- [x] Scopes léxicos y shadowing (`local x = x`), upvalues, un local nuevo por
       iteración y `_ENV` como globales.
-- [ ] Asignación múltiple: primero se evalúan las tablas y claves del lado
+- [x] Asignación múltiple: primero se evalúan las tablas y claves del lado
       izquierdo, luego el lado derecho, y por último se asigna
       (`i, t[i] = i+1, 20`).
-- [ ] `do`, `while`, `repeat`/`until` (la condición ve los locales del cuerpo),
+- [x] `do`, `while`, `repeat`/`until` (la condición ve los locales del cuerpo),
       `if`/`elseif`/`else`, `for` numérico (int y float, paso negativo), `for`
       genérico, `break`, `return`, `goto` y `::label::`.
-- [ ] Funciones: `function a.b:c()`, `local function` recursiva, varargs,
+- [x] Funciones: `function a.b:c()`, `local function` recursiva, varargs,
       closures y funciones anónimas invocadas al instante.
-- [ ] Llamadas `f"s"`, `f{...}`, `o:m()` encadenadas, `(print or io.write)(…)`.
-- [ ] Multirresultados: solo se expande la última expresión de una lista, y
+- [x] Llamadas `f"s"`, `f{...}`, `o:m()` encadenadas, `(print or io.write)(…)`.
+- [x] Multirresultados: solo se expande la última expresión de una lista, y
       `(f())` se trunca a un valor. Aplica en argumentos, constructores,
       `return` y `local`.
-- [ ] Constructores de tabla con `[e]=`, `name=` y posicionales vía
+- [x] Constructores de tabla con `[e]=`, `name=` y posicionales vía
       `appendArray`.
-- [ ] `<const>` y `<close>` (incluido el caso de error).
-- [ ] Mantener `currentLine` y `currentChunk`, y anteponer la posición a los
+- [x] `<const>` y `<close>` (incluido el caso de error).
+- [x] Mantener `currentLine` y `currentChunk`, y anteponer la posición a los
       errores de runtime.
 
 ### Persona B: Valores, tablas y operadores. Asignado a: Camilo
