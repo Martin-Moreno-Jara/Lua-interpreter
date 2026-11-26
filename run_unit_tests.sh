@@ -11,6 +11,9 @@ cd "$(dirname "$0")"
 
 JUNIT=lib/junit-platform-console-standalone-1.11.4.jar
 ANTLR=lib/antlr-4.13.2-complete.jar
+# Separador de classpath: ';' en Windows (Git Bash/MSYS/Cygwin), ':' en el resto.
+# Úsalo en todo classpath con más de una entrada: "$JUNIT${SEP}out".
+case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) SEP=";" ;; *) SEP=":" ;; esac
 [ -f "$JUNIT" ] || {
   echo "falta $JUNIT. Descárgalo con:" >&2
   echo "  curl -fsSL -o $JUNIT https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.11.4/junit-platform-console-standalone-1.11.4.jar" >&2

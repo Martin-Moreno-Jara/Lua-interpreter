@@ -47,13 +47,15 @@ javac --release 8 -Xlint:-options -encoding UTF-8 -cp "$CHECK/lib/*" -d "$CHECK/
 
 fail=0
 for f in test_cases/*.in; do
+  # Through stdin the chunk is named "stdin" (as in lua5.4), so error prefixes
+  # like "test_cases/01.in:49:" in the .expected become "stdin:49:" here.
   # 2>&1 so any stderr output (e.g. an ANTLR version warning) also counts as a failure.
-  out=$(java -cp "$CHECK/classes${SEP}$CHECK/lib/*" Main <"$f" 2>&1) || true
-  if [ "$out" = "syntax errors: 0" ]; then
+  if d=$(java -cp "$CHECK/classes${SEP}$CHECK/lib/*" Main <"$f" 2>&1 \
+         | diff - <(sed "s|$f:|stdin:|g" "${f%.in}.expected")); then
     echo "PASS  $f"
   else
     echo "FAIL  $f"
-    sed 's/^/        /' <<<"$out"
+    sed 's/^/        /' <<<"$d"
     fail=$((fail + 1))
   fi
 done

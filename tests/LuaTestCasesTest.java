@@ -120,7 +120,10 @@ public class LuaTestCasesTest {
         String java = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
         File output = File.createTempFile("lua-test", ".out");
         output.deleteOnExit();
-        Process p = new ProcessBuilder(java, "-cp", CLASSPATH, "Main", in.toString())
+        // Siempre con '/': el nombre del chunk sale en los prefijos de error
+        // ("tests/sections/01_2.3.lua:49:") y en Windows toString() usaría '\'.
+        String path = in.toString().replace(File.separatorChar, '/');
+        Process p = new ProcessBuilder(java, "-cp", CLASSPATH, "Main", path)
                 .redirectErrorStream(true)
                 .redirectOutput(output)
                 .start();

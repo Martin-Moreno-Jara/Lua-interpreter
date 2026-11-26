@@ -1,0 +1,8 @@
+# Los .expected son la salida byte a byte de lua5.4 (LF). Con core.autocrlf=true
+# (habitual en Windows) Git los convertiría a CRLF al hacer checkout y todas las
+# comparaciones fallarían. Lo mismo aplica a los .in/.lua de entrada y a los
+# scripts de bash, que no corren con CRLF.
+*.expected  text eol=lf
+*.in        text eol=lf
+*.lua       text eol=lf
+*.sh        text eol=lf
