@@ -7,14 +7,14 @@ Nacional de Colombia.
 ## Integrantes
 
 - Martin Moreno Jara - <mamorenoj@unal.edu.co>
-- Camilo Londono Moreno - <calondonom@unal.edu.co>
+- Camilo Londoño Moreno - <calondonom@unal.edu.co>
 - Juan David Ardila Diaz - <juardilad@unal.edu.co>
 
 ## Ejecución
 
 1. Si no cuenta con el jar de antlr `antlr-4.13.2-complete.jar` en la carpeta lib, descargarlo e incluirlo ahí. [Link de descarga](https://www.antlr.org/download/antlr-4.13.2-complete.jar).
 2. Ejecutar el script `build.sh` para convertir los archivos de gramática en código de Java, y compilar dicho código
-3. Ejecutar el script `run_test.sh` para constatar que el análisis léxico y sintáctico se hace adecuadamente para los casos de prueba considerados.
+3. Ejecutar el script `run_tests.sh` para constatar que el análisis léxico y sintáctico se hace adecuadamente para los casos de prueba considerados.
 4. Para generar el zip de entrega a UNCode, ejecutar `package.sh`. Crea `dist/lua-interpreter.zip` con las carpetas `src` y `lib`, y verifica que compile con Java 8.
   
 ## Observaciones

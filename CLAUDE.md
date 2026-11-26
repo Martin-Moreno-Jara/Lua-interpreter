@@ -337,42 +337,42 @@ Moreno y Juan David Ardila Díaz.
 
 ### Persona A: Evaluador (Visitor). Asignado a: Martin
 
-- [ ] `Evaluator` extiende `LuaParserBaseVisitor`. `Interpreter.load` parsea el
+- [x] `Evaluator` extiende `LuaParserBaseVisitor`. `Interpreter.load` parsea el
       código y devuelve el chunk como `LuaFunction`.
-- [ ] Scopes léxicos y shadowing (`local x = x`), upvalues, un local nuevo por
+- [x] Scopes léxicos y shadowing (`local x = x`), upvalues, un local nuevo por
       iteración y `_ENV` como globales.
-- [ ] Asignación múltiple: primero se evalúan las tablas y claves del lado
+- [x] Asignación múltiple: primero se evalúan las tablas y claves del lado
       izquierdo, luego el lado derecho, y por último se asigna
       (`i, t[i] = i+1, 20`).
-- [ ] `do`, `while`, `repeat`/`until` (la condición ve los locales del cuerpo),
+- [x] `do`, `while`, `repeat`/`until` (la condición ve los locales del cuerpo),
       `if`/`elseif`/`else`, `for` numérico (int y float, paso negativo), `for`
       genérico, `break`, `return`, `goto` y `::label::`.
-- [ ] Funciones: `function a.b:c()`, `local function` recursiva, varargs,
+- [x] Funciones: `function a.b:c()`, `local function` recursiva, varargs,
       closures y funciones anónimas invocadas al instante.
-- [ ] Llamadas `f"s"`, `f{...}`, `o:m()` encadenadas, `(print or io.write)(…)`.
-- [ ] Multirresultados: solo se expande la última expresión de una lista, y
+- [x] Llamadas `f"s"`, `f{...}`, `o:m()` encadenadas, `(print or io.write)(…)`.
+- [x] Multirresultados: solo se expande la última expresión de una lista, y
       `(f())` se trunca a un valor. Aplica en argumentos, constructores,
       `return` y `local`.
-- [ ] Constructores de tabla con `[e]=`, `name=` y posicionales vía
+- [x] Constructores de tabla con `[e]=`, `name=` y posicionales vía
       `appendArray`.
-- [ ] `<const>` y `<close>` (incluido el caso de error).
-- [ ] Mantener `currentLine` y `currentChunk`, y anteponer la posición a los
+- [x] `<const>` y `<close>` (incluido el caso de error).
+- [x] Mantener `currentLine` y `currentChunk`, y anteponer la posición a los
       errores de runtime.
 
 ### Persona B: Valores, tablas y operadores. Asignado a: Camilo
 
-- [ ] Clases de `LuaValue`, con `equals` y `hashCode` según §5.1.
-- [ ] `Literals`: escapes `\n \t \0 \xXX \ddd \u{XXX}` (a UTF-8) y `\z`; strings
+- [x] Clases de `LuaValue`, con `equals` y `hashCode` según §5.1.
+- [x] `Literals`: escapes `\n \t \0 \xXX \ddd \u{XXX}` (a UTF-8) y `\z`; strings
       largos `[==[ ]==]` (sin el primer salto de línea y sin procesar escapes);
       números decimales, hexadecimales, con exponente y hex float.
-- [ ] `NumberFormat`: el `%.14g` de Lua.
-- [ ] `Ops`: aritmética, operaciones de bits, coerciones, comparaciones (NaN,
+- [x] `NumberFormat`: el `%.14g` de Lua.
+- [x] `Ops`: aritmética, operaciones de bits, coerciones, comparaciones (NaN,
       `10 == 10.0`, orden lexicográfico de strings), concatenación y longitud.
-- [ ] Todos los metamétodos:
+- [x] Todos los metamétodos:
       `__add __sub __mul __div __mod __pow __unm     __idiv __band __bor __bxor __bnot __shl __shr __concat __len __eq __lt     __le __index __newindex __call`,
       con `__index` y `__newindex` como función o como tabla, y cadenas de
       `__index`.
-- [ ] `LuaTable`: parte array más hash, normalización de claves float, borde de
+- [x] `LuaTable`: parte array más hash, normalización de claves float, borde de
       `#` igual a Lua real, `next` y modo débil.
 
 ### Persona C: Biblioteca estándar, errores y concurrencia. Asignado a: David
