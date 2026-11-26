@@ -35,13 +35,19 @@ if [ $build -eq 1 ] || [ ! -d out ]; then ./build.sh; fi
 
 rm -rf out-test
 mkdir out-test
-# NumberFormatTest, LuaTableTest y LiteralsTest llaman a clases de src/ directamente, por eso necesitan out/
-javac -encoding UTF-8 -cp "$JUNIT:out" -d out-test tests/LuaTestCasesTest.java tests/NumberFormatTest.java tests/LuaTableTest.java tests/LiteralsTest.java
+# Las pruebas unitarias de B llaman a clases de src/ directamente, por eso necesitan out/.
+javac -encoding UTF-8 -cp "$JUNIT${SEP}out" -d out-test tests/*Test.java
 
-java "${props[@]}" -jar "$JUNIT" execute \
-  --class-path "out-test:out" \
-  --select-class LuaTestCasesTest \
-  --select-class NumberFormatTest \
-  --select-class LuaTableTest \
-  --select-class LiteralsTest \
+# -c y -o solo filtran los casos y secciones: con un filtro se corre solo
+# LuaTestCasesTest; sin filtros, todas las clases tests/*Test.java.
+selects=()
+if [ ${#props[@]} -gt 0 ]; then
+  selects=(--select-class LuaTestCasesTest)
+else
+  for f in tests/*Test.java; do selects+=(--select-class "$(basename "$f" .java)"); done
+fi
+
+java ${props[@]+"${props[@]}"} -jar "$JUNIT" execute \
+  --class-path "out-test${SEP}out" \
+  "${selects[@]}" \
   --details=tree --disable-banner

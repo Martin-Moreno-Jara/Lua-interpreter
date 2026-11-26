@@ -39,14 +39,10 @@ jobs:
           javac --release 8 -encoding UTF-8 -cp lib/antlr-4.13.2-complete.jar \
             -d out-test/java8 gen/*.java src/*.java
 
-      # Solo las pruebas que ya pueden pasar. Los casos completos (run_tests.sh) y las
-      # secciones de run_unit_tests.sh se agregan cuando Main y Stdlib (C) estén listos.
-      - name: Run unit tests (Persona B)
-        run: |
-          JUNIT=lib/junit-platform-console-standalone-1.11.4.jar
-          CLASSES="NumberFormatTest LuaTableTest LiteralsTest OpsArithTest OpsCompareTest OpsIndexTest OpsMetaTest OpsAccessMetaTest"
-          mkdir -p out-test
-          javac -encoding UTF-8 -cp "$JUNIT:out" -d out-test $(for c in $CLASSES; do echo "tests/$c.java"; done)
-          java -jar "$JUNIT" execute --class-path "out-test:out" \
-            $(for c in $CLASSES; do echo "--select-class $c"; done) \
-            --details=tree --disable-banner
+      # Los 6 casos completos contra los .expected de lua5.4.
+      - name: Run test cases
+        run: bash ./run_tests.sh
+
+      # Todas las clases tests/*Test.java: casos, secciones y pruebas unitarias de B.
+      - name: Run unit tests
+        run: bash ./run_unit_tests.sh

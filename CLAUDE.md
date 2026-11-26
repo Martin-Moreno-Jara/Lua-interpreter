@@ -104,10 +104,13 @@ java -cp "out:lib/antlr-4.13.2-complete.jar" Main test_cases/03.in
 
 - `run_tests.sh` pasa la **ruta** del archivo, así que los errores llevan el
   prefijo `test_cases/01.in:49:` igual que en `.expected`.
-- `package.sh` ejecuta los casos **por stdin**. Hoy considera que un caso pasa
-  si la salida es `syntax errors: 0`, y **hay que cambiarlo** cuando `Main`
-  empiece a interpretar (tarea de C, ver §7). Con stdin el nombre del chunk es
-  `stdin`, como en `lua5.4`. Eso es aceptable porque la calificación es manual.
+- `package.sh` ejecuta los casos del zip **por stdin** y los compara contra los
+  `.expected`. Con stdin el nombre del chunk es `stdin`, como en `lua5.4`, así
+  que antes de comparar cambia el prefijo `test_cases/NN.in:` por `stdin:`.
+- **Windows:** los scripts usan `;` como separador del classpath en Git Bash.
+  `.gitattributes` fuerza LF en `.expected`, `.in`, `.lua` y `.sh`; sin eso,
+  `core.autocrlf=true` los convierte a CRLF y todas las comparaciones fallan.
+- `java Main archivo.lua --tree` imprime el árbol sintáctico en vez de ejecutar.
 
 ---
 
@@ -377,17 +380,17 @@ Moreno y Juan David Ardila Díaz.
 
 ### Persona C: Biblioteca estándar, errores y concurrencia. Asignado a: David
 
-- [ ] `Main`: lee el archivo o stdin en ISO-8859-1, configura stdout en
+- [x] `Main`: lee el archivo o stdin en ISO-8859-1, configura stdout en
       ISO-8859-1, ejecuta e imprime los errores no capturados.
-- [ ] `print`, `type`, `tostring`, `setmetatable`, `rawset`, `pairs`, `ipairs`,
+- [x] `print`, `type`, `tostring`, `setmetatable`, `rawset`, `pairs`, `ipairs`,
       `table.pack` (con `n`), `table.unpack(t, i, j)`, `io.write`, `io.stdin`
       (userdata) y `math.pi`.
-- [ ] `error` (con prefijo de posición), `pcall` y `xpcall` con manejador.
-- [ ] `load(string)` usando `Interpreter.load` con las globales compartidas.
-- [ ] `coroutine.create`, `resume` y `yield`, con el error
+- [x] `error` (con prefijo de posición), `pcall` y `xpcall` con manejador.
+- [x] `load(string)` usando `Interpreter.load` con las globales compartidas.
+- [x] `coroutine.create`, `resume` y `yield`, con el error
       `cannot resume dead coroutine`.
-- [ ] `collectgarbage("collect")` coordinado con el modo débil de B.
-- [ ] Actualizar `package.sh` para que compare contra `.expected` en vez de
+- [x] `collectgarbage("collect")` coordinado con el modo débil de B.
+- [x] Actualizar `package.sh` para que compare contra `.expected` en vez de
       `syntax errors: 0`.
 
 ### Fase 0: todos
